@@ -1,0 +1,55 @@
+#pragma once
+
+#include <QAbstractScrollArea>
+
+#include "nordterminal/TerminalEmulator.h"
+#include "nordterminal/TerminalProfile.h"
+#include "nordterminal/TerminalScrollback.h"
+#include "nordterminal/TerminalSelection.h"
+#include "nordterminal/TerminalSession.h"
+#include "nordterminal/TerminalTheme.h"
+
+namespace nord::terminal {
+
+class TerminalWidget : public QAbstractScrollArea {
+    Q_OBJECT
+
+public:
+    explicit TerminalWidget(QWidget *parent = nullptr);
+
+    void setTheme(const TerminalTheme &theme);
+    [[nodiscard]] TerminalTheme theme() const;
+    bool loadThemeFromFile(const QString &path);
+
+    bool startShell(const TerminalProfile &profile = TerminalProfile::defaultForHost());
+    void stopShell();
+
+protected:
+    void paintEvent(QPaintEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
+    void focusInEvent(QFocusEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
+
+private:
+    void recalculateGrid();
+    void consumeSessionOutput(const QByteArray &data);
+    [[nodiscard]] QPoint toCell(const QPoint &pixelPos) const;
+    [[nodiscard]] bool cellSelected(int row, int col) const;
+
+    TerminalTheme m_theme = TerminalTheme::nordDark();
+    TerminalEmulator m_emulator;
+    TerminalSession m_session;
+    TerminalScrollback m_scrollback;
+    TerminalSelection m_selection;
+
+    int m_cellWidth = 0;
+    int m_cellHeight = 0;
+    int m_ascent = 0;
+    int m_scrollOffset = 0;
+};
+
+} // namespace nord::terminal

@@ -1,0 +1,64 @@
+# Build outputs
+build/
+build-*/
+cmake-build-*/
+out/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+install_manifest.txt
+Makefile
+compile_commands.json
+
+# Qt autogen / moc / resources
+*_autogen/
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.qmlc
+*.jsc
+*.rcc
+
+# Binaries and libs
+*.o
+*.obj
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.lib
+*.pdb
+
+# IDE/editor local files
+.idea/
+.vscode/
+*.user
+*.user.*
+*.creator
+*.creator.user*
+*.pro.user*
+*.autosave
+
+# OS junk
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs/temp
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Graphify generated artifacts (keep lightweight portable graph outputs)
+graphify-out/cache/
+graphify-out/obsidian/
+graphify-out/graph.html
+graphify-out/cost.json
+graphify-out/manifest.json

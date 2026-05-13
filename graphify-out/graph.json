@@ -1,0 +1,1872 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "TerminalTheme.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalTheme.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminaltheme_cpp",
+      "community": 6,
+      "norm_label": "terminaltheme.cpp"
+    },
+    {
+      "label": "resolveForeground()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalTheme.cpp",
+      "source_location": "L5",
+      "id": "terminal_terminaltheme_resolveforeground",
+      "community": 6,
+      "norm_label": "resolveforeground()"
+    },
+    {
+      "label": "resolveBackground()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalTheme.cpp",
+      "source_location": "L17",
+      "id": "terminal_terminaltheme_resolvebackground",
+      "community": 6,
+      "norm_label": "resolvebackground()"
+    },
+    {
+      "label": "nordDark()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalTheme.cpp",
+      "source_location": "L29",
+      "id": "terminal_terminaltheme_norddark",
+      "community": 6,
+      "norm_label": "norddark()"
+    },
+    {
+      "label": "TerminalThemeLoader.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminalthemeloader_cpp",
+      "community": 5,
+      "norm_label": "terminalthemeloader.cpp"
+    },
+    {
+      "label": "readColor()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L10",
+      "id": "terminal_terminalthemeloader_readcolor",
+      "community": 5,
+      "norm_label": "readcolor()"
+    },
+    {
+      "label": "loadFromFile()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L29",
+      "id": "terminal_terminalthemeloader_loadfromfile",
+      "community": 5,
+      "norm_label": "loadfromfile()"
+    },
+    {
+      "label": "loadFromJson()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L38",
+      "id": "terminal_terminalthemeloader_loadfromjson",
+      "community": 5,
+      "norm_label": "loadfromjson()"
+    },
+    {
+      "label": "toJson()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L95",
+      "id": "terminal_terminalthemeloader_tojson",
+      "community": 5,
+      "norm_label": "tojson()"
+    },
+    {
+      "label": "TerminalProfile.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalProfile.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminalprofile_cpp",
+      "community": 7,
+      "norm_label": "terminalprofile.cpp"
+    },
+    {
+      "label": "defaultForHost()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalProfile.cpp",
+      "source_location": "L7",
+      "id": "terminal_terminalprofile_defaultforhost",
+      "community": 7,
+      "norm_label": "defaultforhost()"
+    },
+    {
+      "label": "TerminalKeyMapper.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalKeyMapper.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminalkeymapper_cpp",
+      "community": 8,
+      "norm_label": "terminalkeymapper.cpp"
+    },
+    {
+      "label": "mapKeyEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalKeyMapper.cpp",
+      "source_location": "L8",
+      "id": "terminal_terminalkeymapper_mapkeyevent",
+      "community": 8,
+      "norm_label": "mapkeyevent()"
+    },
+    {
+      "label": "TerminalEmulator.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminalemulator_cpp",
+      "community": 1,
+      "norm_label": "terminalemulator.cpp"
+    },
+    {
+      "label": "TerminalEmulator()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L12",
+      "id": "terminal_terminalemulator_terminalemulator",
+      "community": 1,
+      "norm_label": "terminalemulator()"
+    },
+    {
+      "label": "resize()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L19",
+      "id": "terminal_terminalemulator_resize",
+      "community": 1,
+      "norm_label": "resize()"
+    },
+    {
+      "label": "reset()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L43",
+      "id": "terminal_terminalemulator_reset",
+      "community": 1,
+      "norm_label": "reset()"
+    },
+    {
+      "label": "feedOutput()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L52",
+      "id": "terminal_terminalemulator_feedoutput",
+      "community": 1,
+      "norm_label": "feedoutput()"
+    },
+    {
+      "label": "rows()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L135",
+      "id": "terminal_terminalemulator_rows",
+      "community": 1,
+      "norm_label": "rows()"
+    },
+    {
+      "label": "cols()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L140",
+      "id": "terminal_terminalemulator_cols",
+      "community": 1,
+      "norm_label": "cols()"
+    },
+    {
+      "label": "cursorPosition()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L145",
+      "id": "terminal_terminalemulator_cursorposition",
+      "community": 1,
+      "norm_label": "cursorposition()"
+    },
+    {
+      "label": "cellAt()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L150",
+      "id": "terminal_terminalemulator_cellat",
+      "community": 1,
+      "norm_label": "cellat()"
+    },
+    {
+      "label": "lineText()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L158",
+      "id": "terminal_terminalemulator_linetext",
+      "community": 1,
+      "norm_label": "linetext()"
+    },
+    {
+      "label": "takeScrolledLines()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L171",
+      "id": "terminal_terminalemulator_takescrolledlines",
+      "community": 1,
+      "norm_label": "takescrolledlines()"
+    },
+    {
+      "label": "putCharacter()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L178",
+      "id": "terminal_terminalemulator_putcharacter",
+      "community": 1,
+      "norm_label": "putcharacter()"
+    },
+    {
+      "label": "newline()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L197",
+      "id": "terminal_terminalemulator_newline",
+      "community": 1,
+      "norm_label": "newline()"
+    },
+    {
+      "label": "applySgr()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L216",
+      "id": "terminal_terminalemulator_applysgr",
+      "community": 1,
+      "norm_label": "applysgr()"
+    },
+    {
+      "label": "clearScreen()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L258",
+      "id": "terminal_terminalemulator_clearscreen",
+      "community": 1,
+      "norm_label": "clearscreen()"
+    },
+    {
+      "label": "moveCursor()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L265",
+      "id": "terminal_terminalemulator_movecursor",
+      "community": 1,
+      "norm_label": "movecursor()"
+    },
+    {
+      "label": "index()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L271",
+      "id": "terminal_terminalemulator_index",
+      "community": 1,
+      "norm_label": "index()"
+    },
+    {
+      "label": "TerminalSession.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminalsession_cpp",
+      "community": 2,
+      "norm_label": "terminalsession.cpp"
+    },
+    {
+      "label": "TerminalSession()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L8",
+      "id": "terminal_terminalsession_terminalsession",
+      "community": 2,
+      "norm_label": "terminalsession()"
+    },
+    {
+      "label": "start()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L30",
+      "id": "terminal_terminalsession_start",
+      "community": 2,
+      "norm_label": "start()"
+    },
+    {
+      "label": "isRunning()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L63",
+      "id": "terminal_terminalsession_isrunning",
+      "community": 2,
+      "norm_label": "isrunning()"
+    },
+    {
+      "label": "writeInput()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L68",
+      "id": "terminal_terminalsession_writeinput",
+      "community": 2,
+      "norm_label": "writeinput()"
+    },
+    {
+      "label": "resizePty()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L76",
+      "id": "terminal_terminalsession_resizepty",
+      "community": 2,
+      "norm_label": "resizepty()"
+    },
+    {
+      "label": "terminate()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L83",
+      "id": "terminal_terminalsession_terminate",
+      "community": 2,
+      "norm_label": "terminate()"
+    },
+    {
+      "label": "activeProfile()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L95",
+      "id": "terminal_terminalsession_activeprofile",
+      "community": 2,
+      "norm_label": "activeprofile()"
+    },
+    {
+      "label": "TerminalWidget.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminalwidget_cpp",
+      "community": 0,
+      "norm_label": "terminalwidget.cpp"
+    },
+    {
+      "label": "TerminalWidget()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L20",
+      "id": "terminal_terminalwidget_terminalwidget",
+      "community": 0,
+      "norm_label": "terminalwidget()"
+    },
+    {
+      "label": "setTheme()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L36",
+      "id": "terminal_terminalwidget_settheme",
+      "community": 0,
+      "norm_label": "settheme()"
+    },
+    {
+      "label": "theme()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L44",
+      "id": "terminal_terminalwidget_theme",
+      "community": 0,
+      "norm_label": "theme()"
+    },
+    {
+      "label": "loadThemeFromFile()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L49",
+      "id": "terminal_terminalwidget_loadthemefromfile",
+      "community": 0,
+      "norm_label": "loadthemefromfile()"
+    },
+    {
+      "label": "startShell()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L59",
+      "id": "terminal_terminalwidget_startshell",
+      "community": 0,
+      "norm_label": "startshell()"
+    },
+    {
+      "label": "stopShell()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L64",
+      "id": "terminal_terminalwidget_stopshell",
+      "community": 0,
+      "norm_label": "stopshell()"
+    },
+    {
+      "label": "paintEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L69",
+      "id": "terminal_terminalwidget_paintevent",
+      "community": 0,
+      "norm_label": "paintevent()"
+    },
+    {
+      "label": "keyPressEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L120",
+      "id": "terminal_terminalwidget_keypressevent",
+      "community": 0,
+      "norm_label": "keypressevent()"
+    },
+    {
+      "label": "resizeEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L157",
+      "id": "terminal_terminalwidget_resizeevent",
+      "community": 0,
+      "norm_label": "resizeevent()"
+    },
+    {
+      "label": "mousePressEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L163",
+      "id": "terminal_terminalwidget_mousepressevent",
+      "community": 0,
+      "norm_label": "mousepressevent()"
+    },
+    {
+      "label": "mouseMoveEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L173",
+      "id": "terminal_terminalwidget_mousemoveevent",
+      "community": 0,
+      "norm_label": "mousemoveevent()"
+    },
+    {
+      "label": "wheelEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L182",
+      "id": "terminal_terminalwidget_wheelevent",
+      "community": 0,
+      "norm_label": "wheelevent()"
+    },
+    {
+      "label": "focusInEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L190",
+      "id": "terminal_terminalwidget_focusinevent",
+      "community": 0,
+      "norm_label": "focusinevent()"
+    },
+    {
+      "label": "focusOutEvent()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L196",
+      "id": "terminal_terminalwidget_focusoutevent",
+      "community": 0,
+      "norm_label": "focusoutevent()"
+    },
+    {
+      "label": "recalculateGrid()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L202",
+      "id": "terminal_terminalwidget_recalculategrid",
+      "community": 0,
+      "norm_label": "recalculategrid()"
+    },
+    {
+      "label": "consumeSessionOutput()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L222",
+      "id": "terminal_terminalwidget_consumesessionoutput",
+      "community": 0,
+      "norm_label": "consumesessionoutput()"
+    },
+    {
+      "label": "toCell()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L237",
+      "id": "terminal_terminalwidget_tocell",
+      "community": 0,
+      "norm_label": "tocell()"
+    },
+    {
+      "label": "cellSelected()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L244",
+      "id": "terminal_terminalwidget_cellselected",
+      "community": 0,
+      "norm_label": "cellselected()"
+    },
+    {
+      "label": "TerminalScrollback.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminalscrollback_cpp",
+      "community": 3,
+      "norm_label": "terminalscrollback.cpp"
+    },
+    {
+      "label": "TerminalScrollback()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L7",
+      "id": "terminal_terminalscrollback_terminalscrollback",
+      "community": 3,
+      "norm_label": "terminalscrollback()"
+    },
+    {
+      "label": "pushLine()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L12",
+      "id": "terminal_terminalscrollback_pushline",
+      "community": 3,
+      "norm_label": "pushline()"
+    },
+    {
+      "label": "size()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L20",
+      "id": "terminal_terminalscrollback_size",
+      "community": 3,
+      "norm_label": "size()"
+    },
+    {
+      "label": "maxLines()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L25",
+      "id": "terminal_terminalscrollback_maxlines",
+      "community": 3,
+      "norm_label": "maxlines()"
+    },
+    {
+      "label": "setMaxLines()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L30",
+      "id": "terminal_terminalscrollback_setmaxlines",
+      "community": 3,
+      "norm_label": "setmaxlines()"
+    },
+    {
+      "label": "slice()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L38",
+      "id": "terminal_terminalscrollback_slice",
+      "community": 3,
+      "norm_label": "slice()"
+    },
+    {
+      "label": "TerminalSelection.cpp",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L1",
+      "id": "src_terminal_terminalselection_cpp",
+      "community": 4,
+      "norm_label": "terminalselection.cpp"
+    },
+    {
+      "label": "begin()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L5",
+      "id": "terminal_terminalselection_begin",
+      "community": 4,
+      "norm_label": "begin()"
+    },
+    {
+      "label": "update()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L12",
+      "id": "terminal_terminalselection_update",
+      "community": 4,
+      "norm_label": "update()"
+    },
+    {
+      "label": "clear()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L20",
+      "id": "terminal_terminalselection_clear",
+      "community": 4,
+      "norm_label": "clear()"
+    },
+    {
+      "label": "isActive()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L27",
+      "id": "terminal_terminalselection_isactive",
+      "community": 4,
+      "norm_label": "isactive()"
+    },
+    {
+      "label": "start()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L32",
+      "id": "terminal_terminalselection_start",
+      "community": 4,
+      "norm_label": "start()"
+    },
+    {
+      "label": "end()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L37",
+      "id": "terminal_terminalselection_end",
+      "community": 4,
+      "norm_label": "end()"
+    },
+    {
+      "label": "TerminalSession.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalSession.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalsession_h",
+      "community": 9,
+      "norm_label": "terminalsession.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalSession.h",
+      "source_location": "L9",
+      "id": "nordterminal_terminalsession_terminal",
+      "community": 9,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "TerminalKeyMapper.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalKeyMapper.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalkeymapper_h",
+      "community": 10,
+      "norm_label": "terminalkeymapper.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalKeyMapper.h",
+      "source_location": "L7",
+      "id": "nordterminal_terminalkeymapper_terminal",
+      "community": 10,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "TerminalScrollback.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalScrollback.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalscrollback_h",
+      "community": 11,
+      "norm_label": "terminalscrollback.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalScrollback.h",
+      "source_location": "L7",
+      "id": "nordterminal_terminalscrollback_terminal",
+      "community": 11,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "TerminalCell.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalCell.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalcell_h",
+      "community": 12,
+      "norm_label": "terminalcell.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalCell.h",
+      "source_location": "L5",
+      "id": "nordterminal_terminalcell_terminal",
+      "community": 12,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "TerminalEmulator.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalEmulator.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalemulator_h",
+      "community": 13,
+      "norm_label": "terminalemulator.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalEmulator.h",
+      "source_location": "L10",
+      "id": "nordterminal_terminalemulator_terminal",
+      "community": 13,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "TerminalProfile.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalProfile.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalprofile_h",
+      "community": 14,
+      "norm_label": "terminalprofile.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalProfile.h",
+      "source_location": "L7",
+      "id": "nordterminal_terminalprofile_terminal",
+      "community": 14,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "TerminalSelection.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalSelection.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalselection_h",
+      "community": 15,
+      "norm_label": "terminalselection.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalSelection.h",
+      "source_location": "L5",
+      "id": "nordterminal_terminalselection_terminal",
+      "community": 15,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "TerminalWidget.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalWidget.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalwidget_h",
+      "community": 16,
+      "norm_label": "terminalwidget.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalWidget.h",
+      "source_location": "L12",
+      "id": "nordterminal_terminalwidget_terminal",
+      "community": 16,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "NordTerminal.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/NordTerminal.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_nordterminal_h",
+      "community": 20,
+      "norm_label": "nordterminal.h"
+    },
+    {
+      "label": "TerminalThemeLoader.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalThemeLoader.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminalthemeloader_h",
+      "community": 17,
+      "norm_label": "terminalthemeloader.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalThemeLoader.h",
+      "source_location": "L9",
+      "id": "nordterminal_terminalthemeloader_terminal",
+      "community": 17,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "TerminalTheme.h",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalTheme.h",
+      "source_location": "L1",
+      "id": "include_nordterminal_terminaltheme_h",
+      "community": 18,
+      "norm_label": "terminaltheme.h"
+    },
+    {
+      "label": "terminal()",
+      "file_type": "code",
+      "source_file": "include/nordterminal/TerminalTheme.h",
+      "source_location": "L10",
+      "id": "nordterminal_terminaltheme_terminal",
+      "community": 18,
+      "norm_label": "terminal()"
+    },
+    {
+      "label": "main.cpp",
+      "file_type": "code",
+      "source_file": "examples/basic_widget_demo/main.cpp",
+      "source_location": "L1",
+      "id": "examples_basic_widget_demo_main_cpp",
+      "community": 19,
+      "norm_label": "main.cpp"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/basic_widget_demo/main.cpp",
+      "source_location": "L9",
+      "id": "basic_widget_demo_main_main",
+      "community": 19,
+      "norm_label": "main()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalTheme.cpp",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_terminal_terminaltheme_cpp",
+      "target": "terminal_terminaltheme_resolveforeground",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalTheme.cpp",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "src_terminal_terminaltheme_cpp",
+      "target": "terminal_terminaltheme_resolvebackground",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalTheme.cpp",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "src_terminal_terminaltheme_cpp",
+      "target": "terminal_terminaltheme_norddark",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "src_terminal_terminalthemeloader_cpp",
+      "target": "terminal_terminalthemeloader_readcolor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "src_terminal_terminalthemeloader_cpp",
+      "target": "terminal_terminalthemeloader_loadfromfile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "src_terminal_terminalthemeloader_cpp",
+      "target": "terminal_terminalthemeloader_loadfromjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "src_terminal_terminalthemeloader_cpp",
+      "target": "terminal_terminalthemeloader_tojson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "terminal_terminalthemeloader_loadfromjson",
+      "target": "terminal_terminalthemeloader_readcolor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalThemeLoader.cpp",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "terminal_terminalthemeloader_loadfromfile",
+      "target": "terminal_terminalthemeloader_loadfromjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalProfile.cpp",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_terminal_terminalprofile_cpp",
+      "target": "terminal_terminalprofile_defaultforhost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalKeyMapper.cpp",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "src_terminal_terminalkeymapper_cpp",
+      "target": "terminal_terminalkeymapper_mapkeyevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_terminalemulator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_resize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_reset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_feedoutput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L135",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_rows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L140",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_cols",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L145",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_cursorposition",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L150",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_cellat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L158",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_linetext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_takescrolledlines",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L178",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_putcharacter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L197",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_newline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L216",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_applysgr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L258",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_clearscreen",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L265",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_movecursor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L271",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_index",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L90",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_feedoutput",
+      "target": "terminal_terminalemulator_applysgr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_feedoutput",
+      "target": "terminal_terminalemulator_clearscreen",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_feedoutput",
+      "target": "terminal_terminalemulator_movecursor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L108",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_feedoutput",
+      "target": "terminal_terminalemulator_newline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_feedoutput",
+      "target": "terminal_terminalemulator_putcharacter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L155",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_cellat",
+      "target": "terminal_terminalemulator_index",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L166",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_linetext",
+      "target": "terminal_terminalemulator_cellat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L199",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_newline",
+      "target": "terminal_terminalemulator_linetext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L181",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_putcharacter",
+      "target": "terminal_terminalemulator_newline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L193",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_putcharacter",
+      "target": "terminal_terminalemulator_index",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "src_terminal_terminalsession_cpp",
+      "target": "terminal_terminalsession_terminalsession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "src_terminal_terminalsession_cpp",
+      "target": "terminal_terminalsession_start",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "src_terminal_terminalsession_cpp",
+      "target": "terminal_terminalsession_isrunning",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "src_terminal_terminalsession_cpp",
+      "target": "terminal_terminalsession_writeinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "src_terminal_terminalsession_cpp",
+      "target": "terminal_terminalsession_resizepty",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "src_terminal_terminalsession_cpp",
+      "target": "terminal_terminalsession_terminate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "src_terminal_terminalsession_cpp",
+      "target": "terminal_terminalsession_activeprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "terminal_terminalsession_terminalsession",
+      "target": "terminal_terminalsession_terminate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "terminal_terminalsession_start",
+      "target": "terminal_terminalsession_isrunning",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "terminal_terminalsession_start",
+      "target": "terminal_terminalsession_terminate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSession.cpp",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "terminal_terminalsession_writeinput",
+      "target": "terminal_terminalsession_isrunning",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_terminalwidget",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_settheme",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_theme",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_loadthemefromfile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_startshell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_stopshell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_paintevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_keypressevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L157",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_resizeevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L163",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_mousepressevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L173",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_mousemoveevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L182",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_wheelevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L190",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_focusinevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L196",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_focusoutevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L202",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_recalculategrid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L222",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_consumesessionoutput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L237",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_tocell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L244",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_cellselected",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_terminalwidget",
+      "target": "terminal_terminalwidget_recalculategrid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_settheme",
+      "target": "terminal_terminalwidget_recalculategrid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_loadthemefromfile",
+      "target": "terminal_terminalwidget_settheme",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_paintevent",
+      "target": "terminal_terminalwidget_cellselected",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_resizeevent",
+      "target": "terminal_terminalwidget_recalculategrid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L167",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_mousepressevent",
+      "target": "terminal_terminalwidget_tocell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L176",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_mousemoveevent",
+      "target": "terminal_terminalwidget_tocell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "src_terminal_terminalscrollback_cpp",
+      "target": "terminal_terminalscrollback_terminalscrollback",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_terminal_terminalscrollback_cpp",
+      "target": "terminal_terminalscrollback_pushline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "src_terminal_terminalscrollback_cpp",
+      "target": "terminal_terminalscrollback_size",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "src_terminal_terminalscrollback_cpp",
+      "target": "terminal_terminalscrollback_maxlines",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "src_terminal_terminalscrollback_cpp",
+      "target": "terminal_terminalscrollback_setmaxlines",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "src_terminal_terminalscrollback_cpp",
+      "target": "terminal_terminalscrollback_slice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "terminal_terminalscrollback_pushline",
+      "target": "terminal_terminalscrollback_size",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "terminal_terminalscrollback_setmaxlines",
+      "target": "terminal_terminalscrollback_size",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalScrollback.cpp",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "terminal_terminalscrollback_slice",
+      "target": "terminal_terminalscrollback_size",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "src_terminal_terminalselection_cpp",
+      "target": "terminal_terminalselection_begin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "src_terminal_terminalselection_cpp",
+      "target": "terminal_terminalselection_update",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "src_terminal_terminalselection_cpp",
+      "target": "terminal_terminalselection_clear",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "src_terminal_terminalselection_cpp",
+      "target": "terminal_terminalselection_isactive",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "src_terminal_terminalselection_cpp",
+      "target": "terminal_terminalselection_start",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalSelection.cpp",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "src_terminal_terminalselection_cpp",
+      "target": "terminal_terminalselection_end",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalSession.h",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalsession_h",
+      "target": "nordterminal_terminalsession_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalKeyMapper.h",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalkeymapper_h",
+      "target": "nordterminal_terminalkeymapper_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalScrollback.h",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalscrollback_h",
+      "target": "nordterminal_terminalscrollback_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalCell.h",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalcell_h",
+      "target": "nordterminal_terminalcell_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalEmulator.h",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalemulator_h",
+      "target": "nordterminal_terminalemulator_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalProfile.h",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalprofile_h",
+      "target": "nordterminal_terminalprofile_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalSelection.h",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalselection_h",
+      "target": "nordterminal_terminalselection_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalWidget.h",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalwidget_h",
+      "target": "nordterminal_terminalwidget_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalThemeLoader.h",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminalthemeloader_h",
+      "target": "nordterminal_terminalthemeloader_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "include/nordterminal/TerminalTheme.h",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "include_nordterminal_terminaltheme_h",
+      "target": "nordterminal_terminaltheme_terminal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/basic_widget_demo/main.cpp",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "examples_basic_widget_demo_main_cpp",
+      "target": "basic_widget_demo_main_main",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}
