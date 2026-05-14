@@ -207,27 +207,47 @@ void TerminalWidget::keyPressEvent(QKeyEvent *event)
 {
     resetCursorBlink();
 
-    if (event->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier) && event->key() == Qt::Key_C) {
+    const Qt::KeyboardModifiers modifiers = event->modifiers();
+    const bool hasCtrl = modifiers.testFlag(Qt::ControlModifier);
+    const bool hasShift = modifiers.testFlag(Qt::ShiftModifier);
+    const bool hasAlt = modifiers.testFlag(Qt::AltModifier);
+    const bool hasMeta = modifiers.testFlag(Qt::MetaModifier);
+
+    if (hasCtrl && hasShift && !hasAlt && !hasMeta && event->key() == Qt::Key_C) {
         if (m_selection.isActive()) {
             QApplication::clipboard()->setText(selectedText());
+        } else {
+            m_session.writeInput(QByteArray(1, '\x03'));
         }
+        event->accept();
         return;
     }
 
-    if (event->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier) && event->key() == Qt::Key_V) {
+    if (hasCtrl && hasShift && !hasAlt && !hasMeta && event->key() == Qt::Key_V) {
         QByteArray pasteData = QApplication::clipboard()->text().toUtf8();
         if (m_emulator.bracketedPasteMode()) {
             pasteData.prepend("\x1b[200~");
             pasteData.append("\x1b[201~");
         }
         m_session.writeInput(pasteData);
+        event->accept();
+        return;
+    }
+
+    if (hasCtrl && !hasShift && !hasAlt && !hasMeta && event->key() == Qt::Key_C) {
+        m_session.writeInput(QByteArray(1, '\x03'));
+        event->accept();
         return;
     }
 
     const QByteArray mapped = TerminalKeyMapper::mapKeyEvent(event, m_emulator.applicationCursorKeys());
     if (!mapped.isEmpty()) {
         m_session.writeInput(mapped);
+        event->accept();
+        return;
     }
+
+    QAbstractScrollArea::keyPressEvent(event);
 }
 
 void TerminalWidget::resizeEvent(QResizeEvent *event)
