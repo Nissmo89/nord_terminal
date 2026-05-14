@@ -11,6 +11,8 @@ namespace nord::terminal {
 
 class TerminalEmulator {
 public:
+    using Line = std::vector<TerminalCell>;
+
     TerminalEmulator(int rows = 24, int cols = 80);
 
     void resize(int rows, int cols);
@@ -31,7 +33,7 @@ public:
     [[nodiscard]] const TerminalCell &cellAt(int row, int col) const;
     [[nodiscard]] const TerminalCell *rowData(int row) const;
     [[nodiscard]] QString lineText(int row) const;
-    std::vector<QString> takeScrolledLines();
+    std::vector<Line> takeScrolledLines();
     [[nodiscard]] bool takeScrollbackClearRequested();
     [[nodiscard]] bool takeDirtyRowSpan(int &topRow, int &bottomRow);
     [[nodiscard]] int takePendingViewportScrollLines();
@@ -145,7 +147,7 @@ private:
     RenderStyle m_style;
     std::vector<TerminalCell> m_mainCells;
     std::vector<TerminalCell> m_altCells;
-    std::vector<QString> m_scrolledLines;
+    std::vector<Line> m_scrolledLines;
     bool m_scrollbackClearRequested = false;
     bool m_hasDirtyRows = true;
     int m_dirtyTopRow = 0;

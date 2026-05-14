@@ -1,6 +1,7 @@
 #include "nordterminal/TerminalScrollback.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace nord::terminal {
 
@@ -9,9 +10,17 @@ TerminalScrollback::TerminalScrollback(int maxLines)
 {
 }
 
-void TerminalScrollback::pushLine(const QString &line)
+void TerminalScrollback::pushLine(const Line &line)
 {
     m_lines.push_back(line);
+    while (static_cast<int>(m_lines.size()) > m_maxLines) {
+        m_lines.pop_front();
+    }
+}
+
+void TerminalScrollback::pushLine(Line &&line)
+{
+    m_lines.push_back(std::move(line));
     while (static_cast<int>(m_lines.size()) > m_maxLines) {
         m_lines.pop_front();
     }
@@ -35,9 +44,9 @@ void TerminalScrollback::setMaxLines(int maxLines)
     }
 }
 
-std::vector<QString> TerminalScrollback::slice(int start, int count) const
+std::vector<TerminalScrollback::Line> TerminalScrollback::slice(int start, int count) const
 {
-    std::vector<QString> output;
+    std::vector<Line> output;
     if (count <= 0 || m_lines.empty()) {
         return output;
     }
@@ -51,13 +60,27 @@ std::vector<QString> TerminalScrollback::slice(int start, int count) const
     return output;
 }
 
-const QString &TerminalScrollback::lineAt(int index) const
+const TerminalScrollback::Line &TerminalScrollback::lineAt(int index) const
 {
-    static const QString empty;
+    static const Line empty;
     if (index < 0 || index >= static_cast<int>(m_lines.size())) {
         return empty;
     }
     return m_lines[static_cast<std::size_t>(index)];
+}
+
+QString TerminalScrollback::lineText(const Line &line)
+{
+    QString text;
+    text.reserve(static_cast<qsizetype>(line.size()) * 2);
+    for (const TerminalCell &cell : line) {
+        if (cell.wideContinuation) {
+            text.append(QLatin1Char(' '));
+            continue;
+        }
+        text.append(cell.character);
+    }
+    return text;
 }
 
 } // namespace nord::terminal

@@ -202,9 +202,9 @@ QString TerminalEmulator::lineText(int row) const
     return text;
 }
 
-std::vector<QString> TerminalEmulator::takeScrolledLines()
+std::vector<TerminalEmulator::Line> TerminalEmulator::takeScrolledLines()
 {
-    std::vector<QString> lines = std::move(m_scrolledLines);
+    std::vector<Line> lines = std::move(m_scrolledLines);
     m_scrolledLines.clear();
     return lines;
 }
@@ -787,7 +787,15 @@ void TerminalEmulator::scrollUp(int topRow, int bottomRow)
     }
 
     if (!m_inAltBuffer && top == 0) {
-        m_scrolledLines.push_back(lineText(0));
+        Line line;
+        line.reserve(static_cast<std::size_t>(m_cols));
+        const TerminalCell *row = rowData(0);
+        if (row != nullptr) {
+            for (int col = 0; col < m_cols; ++col) {
+                line.push_back(row[static_cast<std::size_t>(col)]);
+            }
+        }
+        m_scrolledLines.push_back(std::move(line));
     }
 
     const TerminalCell eraseCell = makeEraseCell();

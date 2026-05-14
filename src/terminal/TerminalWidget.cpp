@@ -18,6 +18,7 @@
 #include <QWheelEvent>
 
 #include <algorithm>
+#include <utility>
 
 namespace nord::terminal {
 
@@ -233,6 +234,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
     bool lastUnderline = false;
     bool lastStrike = false;
     const QString spaceGlyph = QStringLiteral(" ");
+    const TerminalCell emptyCell {};
 
     for (int row = firstRow; row <= lastRow; ++row) {
         const int absoluteLine = startLine + row;
@@ -264,23 +266,106 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         const bool rowHasSelection = selectedStartCol >= 0;
 
         if (absoluteLine < scrollbackSize) {
-            const QString &line = m_scrollback.lineAt(absoluteLine);
-            const auto codepoints = line.toUcs4();
+            const TerminalScrollback::Line &rowCells = m_scrollback.lineAt(absoluteLine);
 
-            if (rowHasSelection) {
-                painter.fillRect(0, y, cols * m_cellWidth, m_cellHeight, m_theme.background);
-                painter.fillRect(selectedStartCol * m_cellWidth, y, (selectedEndCol - selectedStartCol + 1) * m_cellWidth,
-                    m_cellHeight, m_theme.selection);
+            // Pass 1: paint backgrounds.
+            for (int col = 0; col < cols; ++col) {
+                const TerminalCell &cell = col < static_cast<int>(rowCells.size()) ? rowCells[static_cast<std::size_t>(col)] : emptyCell;
+                QColor background = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
+                if (cell.inverse) {
+                    background = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
+                }
+                if (rowHasSelection && col >= selectedStartCol && col <= selectedEndCol) {
+                    background = m_theme.selection;
+                }
+
+                const int widthCells = (cell.wide && col + 1 < cols) ? 2 : 1;
+                const int x = col * m_cellWidth;
+                painter.fillRect(x, y, m_cellWidth * widthCells, m_cellHeight, background);
             }
 
-            painter.setPen(m_theme.foreground);
-            painter.setFont(m_theme.font);
-            for (int col = 0; col < cols; ++col) {
-                const QString glyph = col < codepoints.size() ? scalarFromCodepoint(codepoints[col]) : QString();
-                if (!glyph.isEmpty() && glyph != spaceGlyph) {
-                    const int x = col * m_cellWidth;
-                    painter.drawText(x, y + m_ascent, glyph);
+            // Pass 2: draw glyphs.
+            for (int col = 0; col < cols;) {
+                const TerminalCell &cell = col < static_cast<int>(rowCells.size()) ? rowCells[static_cast<std::size_t>(col)] : emptyCell;
+                if (cell.wideContinuation) {
+                    ++col;
+                    continue;
                 }
+                if (cell.character.isEmpty()) {
+                    ++col;
+                    continue;
+                }
+
+                QColor foreground = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
+                if (cell.inverse) {
+                    foreground = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
+                }
+                if (cell.dim) {
+                    foreground.setAlphaF(0.7);
+                }
+
+                if (!fontInitialized || cell.bold != lastBold || cell.italic != lastItalic
+                    || cell.underline != lastUnderline || cell.strikethrough != lastStrike) {
+                    styledFont = m_theme.font;
+                    styledFont.setBold(cell.bold);
+                    styledFont.setItalic(cell.italic);
+                    styledFont.setUnderline(cell.underline);
+                    styledFont.setStrikeOut(cell.strikethrough);
+                    painter.setFont(styledFont);
+
+                    fontInitialized = true;
+                    lastBold = cell.bold;
+                    lastItalic = cell.italic;
+                    lastUnderline = cell.underline;
+                    lastStrike = cell.strikethrough;
+                }
+
+                if (cell.wide || cell.character.size() > 1) {
+                    if (cell.character != spaceGlyph) {
+                        painter.setPen(foreground);
+                        painter.drawText(col * m_cellWidth, y + m_ascent, cell.character);
+                    }
+                    col += cell.wide ? 2 : 1;
+                    continue;
+                }
+
+                if (cell.character == spaceGlyph) {
+                    ++col;
+                    continue;
+                }
+
+                const int runStart = col;
+                QString runText = cell.character;
+                int runEnd = col + 1;
+
+                auto sameTextStyle = [&cell](const TerminalCell &other) {
+                    return cell.bold == other.bold
+                        && cell.italic == other.italic
+                        && cell.underline == other.underline
+                        && cell.strikethrough == other.strikethrough
+                        && cell.dim == other.dim
+                        && cell.inverse == other.inverse
+                        && cell.foreground == other.foreground
+                        && cell.background == other.background
+                        && cell.hasForegroundRgb == other.hasForegroundRgb
+                        && cell.hasBackgroundRgb == other.hasBackgroundRgb
+                        && cell.foregroundRgb == other.foregroundRgb
+                        && cell.backgroundRgb == other.backgroundRgb;
+                };
+
+                while (runEnd < cols) {
+                    const TerminalCell &next = runEnd < static_cast<int>(rowCells.size()) ? rowCells[static_cast<std::size_t>(runEnd)] : emptyCell;
+                    if (next.wide || next.wideContinuation || next.character.isEmpty() || next.character.size() > 1
+                        || !sameTextStyle(next)) {
+                        break;
+                    }
+                    runText.append(next.character);
+                    ++runEnd;
+                }
+
+                painter.setPen(foreground);
+                painter.drawText(runStart * m_cellWidth, y + m_ascent, runText);
+                col = runEnd;
             }
             continue;
         }
@@ -651,8 +736,8 @@ void TerminalWidget::flushPendingSessionOutput()
     if (!terminalReply.isEmpty()) {
         m_session.writeInput(terminalReply);
     }
-    for (const QString &line : m_emulator.takeScrolledLines()) {
-        m_scrollback.pushLine(line);
+    for (TerminalEmulator::Line line : m_emulator.takeScrolledLines()) {
+        m_scrollback.pushLine(std::move(line));
     }
 
     verticalScrollBar()->setRange(0, std::max(0, m_scrollback.size()));
@@ -729,7 +814,7 @@ QString TerminalWidget::lineTextAtAbsolute(int absoluteLine) const
         return {};
     }
     if (absoluteLine < m_scrollback.size()) {
-        return m_scrollback.lineAt(absoluteLine);
+        return TerminalScrollback::lineText(m_scrollback.lineAt(absoluteLine));
     }
     return m_emulator.lineText(absoluteLine - m_scrollback.size());
 }
