@@ -34,9 +34,13 @@ struct TerminalCell {
     QColor foregroundRgb = QColor();
     QColor backgroundRgb = QColor();
     bool bold = false;
+    bool dim = false;
     bool italic = false;
     bool underline = false;
+    bool strikethrough = false;
     bool inverse = false;
+    bool wide = false;
+    bool wideContinuation = false;
 };
 
 } // namespace nord::terminal

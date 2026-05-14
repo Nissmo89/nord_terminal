@@ -3,15 +3,24 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QList>
-#include <QProcess>
 #include <QProcessEnvironment>
 #include <QSocketNotifier>
 #include <QTimer>
+#include <QDateTime>
+#include <QMetaObject>
+#include <QStandardPaths>
 
 #include <algorithm>
+#include <atomic>
 #include <cerrno>
+#include <condition_variable>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
 #include <vector>
 
 #if defined(Q_OS_UNIX)
@@ -29,7 +38,170 @@
 #endif
 #endif
 
+#if defined(Q_OS_WIN)
+#if !defined(NOMINMAX)
+#define NOMINMAX
+#endif
+#include <windows.h>
+
+#ifndef HPCON
+typedef HANDLE HPCON;
+#endif
+
+#ifndef PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE
+#define PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE 0x00020016
+#endif
+#endif
+
 namespace nord::terminal {
+
+#if defined(Q_OS_WIN)
+namespace {
+
+using CreatePseudoConsoleFn = HRESULT(WINAPI *)(COORD, HANDLE, HANDLE, DWORD, HPCON *);
+using ResizePseudoConsoleFn = HRESULT(WINAPI *)(HPCON, COORD);
+using ClosePseudoConsoleFn = void(WINAPI *)(HPCON);
+
+bool isValidHandle(HANDLE handle)
+{
+    return handle != nullptr && handle != INVALID_HANDLE_VALUE;
+}
+
+void closeHandleSafely(HANDLE &handle)
+{
+    if (isValidHandle(handle)) {
+        ::CloseHandle(handle);
+    }
+    handle = INVALID_HANDLE_VALUE;
+}
+
+QString formatWin32Error(DWORD code)
+{
+    LPWSTR buffer = nullptr;
+    const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
+    const DWORD length = ::FormatMessageW(flags, nullptr, code, 0, reinterpret_cast<LPWSTR>(&buffer), 0, nullptr);
+    QString message;
+    if (length > 0 && buffer) {
+        message = QString::fromWCharArray(buffer, static_cast<int>(length)).trimmed();
+    } else {
+        message = QStringLiteral("Win32 error %1").arg(code);
+    }
+    if (buffer) {
+        ::LocalFree(buffer);
+    }
+    return message;
+}
+
+QString formatHResultError(HRESULT hr)
+{
+    const DWORD asWin32 = HRESULT_FACILITY(hr) == FACILITY_WIN32 ? HRESULT_CODE(hr) : static_cast<DWORD>(hr);
+    return QStringLiteral("HRESULT 0x%1 (%2)")
+        .arg(QString::number(static_cast<quint32>(hr), 16).rightJustified(8, QLatin1Char('0')).toUpper(),
+            formatWin32Error(asWin32));
+}
+
+QString quoteWindowsCommandArg(const QString &arg)
+{
+    if (arg.isEmpty()) {
+        return QStringLiteral("\"\"");
+    }
+
+    bool needsQuotes = false;
+    for (const QChar ch : arg) {
+        if (ch.isSpace() || ch == QLatin1Char('\t') || ch == QLatin1Char('"')) {
+            needsQuotes = true;
+            break;
+        }
+    }
+    if (!needsQuotes) {
+        return arg;
+    }
+
+    QString quoted;
+    quoted.reserve(arg.size() + 2);
+    quoted.append(QLatin1Char('"'));
+    int backslashCount = 0;
+    for (const QChar ch : arg) {
+        if (ch == QLatin1Char('\\')) {
+            ++backslashCount;
+            continue;
+        }
+        if (ch == QLatin1Char('"')) {
+            quoted.append(QString(backslashCount * 2 + 1, QLatin1Char('\\')));
+            quoted.append(QLatin1Char('"'));
+            backslashCount = 0;
+            continue;
+        }
+        if (backslashCount > 0) {
+            quoted.append(QString(backslashCount, QLatin1Char('\\')));
+            backslashCount = 0;
+        }
+        quoted.append(ch);
+    }
+    if (backslashCount > 0) {
+        quoted.append(QString(backslashCount * 2, QLatin1Char('\\')));
+    }
+    quoted.append(QLatin1Char('"'));
+    return quoted;
+}
+
+std::vector<wchar_t> buildWindowsEnvironmentBlock(const QProcessEnvironment &environment)
+{
+    QStringList keys = environment.keys();
+    std::sort(keys.begin(), keys.end(), [](const QString &lhs, const QString &rhs) {
+        return QString::compare(lhs, rhs, Qt::CaseInsensitive) < 0;
+    });
+
+    std::vector<wchar_t> block;
+    for (const QString &key : keys) {
+        const QString entry = key + QLatin1Char('=') + environment.value(key);
+        const std::wstring wide = entry.toStdWString();
+        block.insert(block.end(), wide.begin(), wide.end());
+        block.push_back(L'\0');
+    }
+    block.push_back(L'\0');
+    return block;
+}
+
+} // namespace
+
+struct TerminalSession::ConPtyState {
+    CreatePseudoConsoleFn createPseudoConsole = nullptr;
+    ResizePseudoConsoleFn resizePseudoConsole = nullptr;
+    ClosePseudoConsoleFn closePseudoConsole = nullptr;
+
+    HPCON pseudoConsole = nullptr;
+    HANDLE ptyInputRead = INVALID_HANDLE_VALUE;
+    HANDLE ptyInputWrite = INVALID_HANDLE_VALUE;
+    HANDLE ptyOutputRead = INVALID_HANDLE_VALUE;
+    HANDLE ptyOutputWrite = INVALID_HANDLE_VALUE;
+
+    PROCESS_INFORMATION processInfo {};
+    std::thread readerThread;
+    std::thread writerThread;
+    std::thread waitThread;
+    std::mutex writeMutex;
+    std::condition_variable writeCv;
+    QByteArray writeQueue;
+    std::atomic_bool running {false};
+    std::atomic_bool stopRequested {false};
+    std::atomic_bool exitEmitted {false};
+
+    ~ConPtyState()
+    {
+        if (closePseudoConsole && pseudoConsole) {
+            closePseudoConsole(pseudoConsole);
+            pseudoConsole = nullptr;
+        }
+        closeHandleSafely(ptyInputRead);
+        closeHandleSafely(ptyInputWrite);
+        closeHandleSafely(ptyOutputRead);
+        closeHandleSafely(ptyOutputWrite);
+        closeHandleSafely(processInfo.hThread);
+        closeHandleSafely(processInfo.hProcess);
+    }
+};
+#endif
 
 TerminalSession::TerminalSession(QObject *parent)
     : QObject(parent)
@@ -39,24 +211,23 @@ TerminalSession::TerminalSession(QObject *parent)
     m_exitCheckTimer->setInterval(80);
     connect(m_exitCheckTimer, &QTimer::timeout, this, &TerminalSession::onChildExitCheck);
 #else
-    m_process = new QProcess(this);
-    connect(m_process, &QProcess::readyReadStandardOutput, this, [this]() {
-        emit outputReceived(m_process->readAllStandardOutput());
-    });
-    connect(m_process, &QProcess::readyReadStandardError, this, [this]() {
-        emit outputReceived(m_process->readAllStandardError());
-    });
-    connect(m_process, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
-        emit sessionError(QStringLiteral("QProcess error: %1").arg(static_cast<int>(error)));
-    });
-    connect(m_process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this,
-        [this](int exitCode, QProcess::ExitStatus) { emit processExited(exitCode); });
+    m_conPty = nullptr;
 #endif
 }
 
 TerminalSession::~TerminalSession()
 {
+#if defined(Q_OS_UNIX)
     terminate();
+    if (m_childPid > 0) {
+        ::kill(static_cast<pid_t>(m_childPid), SIGKILL);
+        int status = 0;
+        ::waitpid(static_cast<pid_t>(m_childPid), &status, 0);
+        m_childPid = -1;
+    }
+#else
+    terminate();
+#endif
 }
 
 bool TerminalSession::start(const TerminalProfile &profile)
@@ -65,6 +236,43 @@ bool TerminalSession::start(const TerminalProfile &profile)
         emit sessionError(QStringLiteral("Shell path is empty."));
         return false;
     }
+
+#if defined(Q_OS_WIN)
+    if (m_conPty) {
+        terminate();
+    }
+#endif
+#if defined(Q_OS_UNIX)
+    if (isRunning()) {
+        terminate();
+        if (m_childPid > 0) {
+            ::kill(static_cast<pid_t>(m_childPid), SIGKILL);
+            int status = 0;
+            ::waitpid(static_cast<pid_t>(m_childPid), &status, 0);
+            finalizeChildExit(status, true);
+        }
+    }
+#endif
+
+#if defined(Q_OS_WIN)
+    QString resolvedShellPath = profile.shellPath;
+    const QFileInfo requestedShellInfo(profile.shellPath);
+    if (!requestedShellInfo.exists() || !requestedShellInfo.isExecutable()) {
+        const QString discoveredPath = QStandardPaths::findExecutable(profile.shellPath);
+        if (!discoveredPath.isEmpty()) {
+            resolvedShellPath = discoveredPath;
+        }
+    }
+    const QFileInfo shellPathInfo(resolvedShellPath);
+    if (!shellPathInfo.exists()) {
+        emit sessionError(QStringLiteral("Shell not found: %1").arg(profile.shellPath));
+        return false;
+    }
+    if (!shellPathInfo.isExecutable()) {
+        emit sessionError(QStringLiteral("Shell is not executable: %1").arg(resolvedShellPath));
+        return false;
+    }
+#else
     const QFileInfo shellPathInfo(profile.shellPath);
     if (!shellPathInfo.exists()) {
         emit sessionError(QStringLiteral("Shell not found: %1").arg(profile.shellPath));
@@ -74,12 +282,12 @@ bool TerminalSession::start(const TerminalProfile &profile)
         emit sessionError(QStringLiteral("Shell is not executable: %1").arg(profile.shellPath));
         return false;
     }
-
-    if (isRunning()) {
-        terminate();
-    }
+#endif
 
     m_profile = profile;
+#if defined(Q_OS_WIN)
+    m_profile.shellPath = shellPathInfo.absoluteFilePath();
+#endif
 
 #if defined(Q_OS_UNIX)
     QStringList args = profile.arguments;
@@ -138,6 +346,10 @@ bool TerminalSession::start(const TerminalProfile &profile)
     m_masterFd = masterFd;
     m_childPid = static_cast<qint64>(pid);
     m_exitEmitted = false;
+    m_terminationRequested = false;
+    m_forceKillSent = false;
+    m_terminationStartMs = 0;
+    m_writeBuffer.clear();
 
     const int flags = ::fcntl(m_masterFd, F_GETFL, 0);
     if (flags >= 0) {
@@ -149,8 +361,18 @@ bool TerminalSession::start(const TerminalProfile &profile)
         m_readNotifier = nullptr;
     }
     m_readNotifier = new QSocketNotifier(m_masterFd, QSocketNotifier::Read, this);
-    connect(m_readNotifier, &QSocketNotifier::activated, this, [this](auto, auto, auto) {
+    connect(m_readNotifier, &QSocketNotifier::activated, this, [this]() {
         onMasterPtyReadyRead();
+    });
+
+    if (m_writeNotifier) {
+        delete m_writeNotifier;
+        m_writeNotifier = nullptr;
+    }
+    m_writeNotifier = new QSocketNotifier(m_masterFd, QSocketNotifier::Write, this);
+    m_writeNotifier->setEnabled(false);
+    connect(m_writeNotifier, &QSocketNotifier::activated, this, [this]() {
+        onMasterPtyWritable();
     });
 
     if (m_exitCheckTimer) {
@@ -158,11 +380,39 @@ bool TerminalSession::start(const TerminalProfile &profile)
     }
     return true;
 #else
-    m_process->setProgram(profile.shellPath);
-    m_process->setArguments(profile.arguments);
+    std::unique_ptr<ConPtyState> conPty = std::make_unique<ConPtyState>();
+    conPty->createPseudoConsole = reinterpret_cast<CreatePseudoConsoleFn>(::GetProcAddress(::GetModuleHandleW(L"kernel32.dll"), "CreatePseudoConsole"));
+    conPty->resizePseudoConsole = reinterpret_cast<ResizePseudoConsoleFn>(::GetProcAddress(::GetModuleHandleW(L"kernel32.dll"), "ResizePseudoConsole"));
+    conPty->closePseudoConsole = reinterpret_cast<ClosePseudoConsoleFn>(::GetProcAddress(::GetModuleHandleW(L"kernel32.dll"), "ClosePseudoConsole"));
+    if (!conPty->createPseudoConsole || !conPty->resizePseudoConsole || !conPty->closePseudoConsole) {
+        emit sessionError(QStringLiteral("Windows ConPTY API is unavailable (requires Windows 10 version 1809 or newer)."));
+        return false;
+    }
 
-    if (!profile.workingDirectory.isEmpty()) {
-        m_process->setWorkingDirectory(profile.workingDirectory);
+    SECURITY_ATTRIBUTES securityAttributes {};
+    securityAttributes.nLength = sizeof(securityAttributes);
+    securityAttributes.bInheritHandle = TRUE;
+
+    if (!::CreatePipe(&conPty->ptyInputRead, &conPty->ptyInputWrite, &securityAttributes, 0)) {
+        emit sessionError(QStringLiteral("CreatePipe(input) failed: %1").arg(formatWin32Error(::GetLastError())));
+        return false;
+    }
+    if (!::CreatePipe(&conPty->ptyOutputRead, &conPty->ptyOutputWrite, &securityAttributes, 0)) {
+        emit sessionError(QStringLiteral("CreatePipe(output) failed: %1").arg(formatWin32Error(::GetLastError())));
+        return false;
+    }
+    ::SetHandleInformation(conPty->ptyInputWrite, HANDLE_FLAG_INHERIT, 0);
+    ::SetHandleInformation(conPty->ptyOutputRead, HANDLE_FLAG_INHERIT, 0);
+
+    const COORD initialSize {
+        static_cast<SHORT>(80),
+        static_cast<SHORT>(24),
+    };
+    const HRESULT createConPtyHr =
+        conPty->createPseudoConsole(initialSize, conPty->ptyInputRead, conPty->ptyOutputWrite, 0, &conPty->pseudoConsole);
+    if (FAILED(createConPtyHr)) {
+        emit sessionError(QStringLiteral("CreatePseudoConsole failed: %1").arg(formatHResultError(createConPtyHr)));
+        return false;
     }
 
     QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
@@ -175,14 +425,163 @@ bool TerminalSession::start(const TerminalProfile &profile)
     if (!environment.contains(QStringLiteral("COLORTERM"))) {
         environment.insert(QStringLiteral("COLORTERM"), QStringLiteral("truecolor"));
     }
-    m_process->setProcessEnvironment(environment);
+    const std::vector<wchar_t> environmentBlock = buildWindowsEnvironmentBlock(environment);
 
-    m_process->start();
-    const bool started = m_process->waitForStarted(3000);
-    if (!started) {
-        emit sessionError(QStringLiteral("Failed to start shell '%1': %2").arg(profile.shellPath, m_process->errorString()));
+    SIZE_T attributeListBytes = 0;
+    ::InitializeProcThreadAttributeList(nullptr, 1, 0, &attributeListBytes);
+    if (attributeListBytes == 0) {
+        emit sessionError(QStringLiteral("InitializeProcThreadAttributeList sizing failed: %1")
+                              .arg(formatWin32Error(::GetLastError())));
+        return false;
     }
-    return started;
+    std::vector<char> attributeListStorage(attributeListBytes);
+    auto *attributeList = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(attributeListStorage.data());
+    if (!::InitializeProcThreadAttributeList(attributeList, 1, 0, &attributeListBytes)) {
+        emit sessionError(QStringLiteral("InitializeProcThreadAttributeList failed: %1").arg(formatWin32Error(::GetLastError())));
+        return false;
+    }
+
+    STARTUPINFOEXW startupInfoEx {};
+    startupInfoEx.StartupInfo.cb = sizeof(startupInfoEx);
+    startupInfoEx.lpAttributeList = attributeList;
+
+    const BOOL updated = ::UpdateProcThreadAttribute(startupInfoEx.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
+        conPty->pseudoConsole, sizeof(HPCON), nullptr, nullptr);
+    if (!updated) {
+        ::DeleteProcThreadAttributeList(attributeList);
+        emit sessionError(QStringLiteral("UpdateProcThreadAttribute(PSEUDOCONSOLE) failed: %1")
+                              .arg(formatWin32Error(::GetLastError())));
+        return false;
+    }
+
+    QStringList commandLineParts;
+    commandLineParts.reserve(profile.arguments.size() + 1);
+    commandLineParts << shellPathInfo.absoluteFilePath();
+    commandLineParts << profile.arguments;
+    QString commandLine;
+    for (int i = 0; i < commandLineParts.size(); ++i) {
+        if (i > 0) {
+            commandLine.append(QLatin1Char(' '));
+        }
+        commandLine.append(quoteWindowsCommandArg(commandLineParts.at(i)));
+    }
+    std::wstring commandLineWide = commandLine.toStdWString();
+    std::vector<wchar_t> commandLineBuffer(commandLineWide.begin(), commandLineWide.end());
+    commandLineBuffer.push_back(L'\0');
+
+    const std::wstring executableWide = shellPathInfo.absoluteFilePath().toStdWString();
+    std::wstring workingDirectoryWide;
+    LPCWSTR workingDirectoryPtr = nullptr;
+    if (!profile.workingDirectory.isEmpty()) {
+        workingDirectoryWide = profile.workingDirectory.toStdWString();
+        workingDirectoryPtr = workingDirectoryWide.c_str();
+    }
+
+    const DWORD createFlags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
+    const BOOL processCreated = ::CreateProcessW(executableWide.c_str(), commandLineBuffer.data(), nullptr, nullptr, FALSE,
+        createFlags, environmentBlock.empty() ? nullptr : const_cast<wchar_t *>(environmentBlock.data()), workingDirectoryPtr,
+        &startupInfoEx.StartupInfo, &conPty->processInfo);
+    ::DeleteProcThreadAttributeList(attributeList);
+    if (!processCreated) {
+        emit sessionError(QStringLiteral("CreateProcessW failed for '%1': %2")
+                              .arg(shellPathInfo.absoluteFilePath(), formatWin32Error(::GetLastError())));
+        return false;
+    }
+
+    closeHandleSafely(conPty->ptyInputRead);
+    closeHandleSafely(conPty->ptyOutputWrite);
+    closeHandleSafely(conPty->processInfo.hThread);
+
+    ConPtyState *state = conPty.get();
+    state->running.store(true);
+
+    state->readerThread = std::thread([this, state]() {
+        std::vector<char> buffer(8192);
+        while (!state->stopRequested.load()) {
+            DWORD bytesRead = 0;
+            const BOOL ok = ::ReadFile(state->ptyOutputRead, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, nullptr);
+            if (ok && bytesRead > 0) {
+                const QByteArray chunk(buffer.data(), static_cast<int>(bytesRead));
+                QMetaObject::invokeMethod(this, [this, chunk]() {
+                    emit outputReceived(chunk);
+                }, Qt::QueuedConnection);
+                continue;
+            }
+
+            const DWORD error = ::GetLastError();
+            if (state->stopRequested.load() || error == ERROR_BROKEN_PIPE || error == ERROR_HANDLE_EOF || error == ERROR_NO_DATA
+                || error == ERROR_OPERATION_ABORTED) {
+                break;
+            }
+            QMetaObject::invokeMethod(this, [this, error]() {
+                emit sessionError(QStringLiteral("ConPTY read failed: %1").arg(formatWin32Error(error)));
+            }, Qt::QueuedConnection);
+            break;
+        }
+    });
+
+    state->writerThread = std::thread([this, state]() {
+        for (;;) {
+            QByteArray toWrite;
+            {
+                std::unique_lock<std::mutex> lock(state->writeMutex);
+                state->writeCv.wait(lock, [state]() {
+                    return state->stopRequested.load() || !state->writeQueue.isEmpty();
+                });
+                if (state->stopRequested.load() && state->writeQueue.isEmpty()) {
+                    break;
+                }
+                toWrite.swap(state->writeQueue);
+            }
+
+            qsizetype offset = 0;
+            while (offset < toWrite.size()) {
+                const qsizetype remaining = toWrite.size() - offset;
+                const DWORD chunkSize =
+                    static_cast<DWORD>(std::min<qsizetype>(remaining, static_cast<qsizetype>(std::numeric_limits<DWORD>::max())));
+                DWORD bytesWritten = 0;
+                const BOOL ok = ::WriteFile(state->ptyInputWrite, toWrite.constData() + offset, chunkSize, &bytesWritten, nullptr);
+                if (ok && bytesWritten > 0) {
+                    offset += static_cast<qsizetype>(bytesWritten);
+                    continue;
+                }
+
+                const DWORD error = ::GetLastError();
+                if (state->stopRequested.load() || error == ERROR_BROKEN_PIPE || error == ERROR_NO_DATA
+                    || error == ERROR_OPERATION_ABORTED) {
+                    break;
+                }
+                QMetaObject::invokeMethod(this, [this, error]() {
+                    emit sessionError(QStringLiteral("ConPTY write failed: %1").arg(formatWin32Error(error)));
+                }, Qt::QueuedConnection);
+                state->stopRequested.store(true);
+                break;
+            }
+        }
+    });
+
+    state->waitThread = std::thread([this, state]() {
+        const DWORD waitResult = ::WaitForSingleObject(state->processInfo.hProcess, INFINITE);
+        int exitCode = 0;
+        if (waitResult == WAIT_OBJECT_0) {
+            DWORD rawExitCode = 0;
+            if (::GetExitCodeProcess(state->processInfo.hProcess, &rawExitCode)) {
+                exitCode = static_cast<int>(rawExitCode);
+            }
+        }
+        state->running.store(false);
+        state->stopRequested.store(true);
+        state->writeCv.notify_all();
+
+        if (!state->exitEmitted.exchange(true)) {
+            QMetaObject::invokeMethod(this, [this, exitCode]() {
+                emit processExited(exitCode);
+            }, Qt::QueuedConnection);
+        }
+    });
+
+    m_conPty = conPty.release();
+    return true;
 #endif
 }
 
@@ -191,7 +590,7 @@ bool TerminalSession::isRunning() const
 #if defined(Q_OS_UNIX)
     return m_childPid > 0;
 #else
-    return m_process && m_process->state() == QProcess::Running;
+    return m_conPty && m_conPty->running.load();
 #endif
 }
 
@@ -206,6 +605,12 @@ void TerminalSession::writeInput(const QByteArray &data)
         return;
     }
 
+    if (!m_writeBuffer.isEmpty()) {
+        m_writeBuffer.append(data);
+        flushPendingWriteBuffer();
+        return;
+    }
+
     qsizetype offset = 0;
     while (offset < data.size()) {
         const ssize_t written = ::write(m_masterFd, data.constData() + offset, static_cast<size_t>(data.size() - offset));
@@ -217,15 +622,26 @@ void TerminalSession::writeInput(const QByteArray &data)
             continue;
         }
         if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            break;
+            m_writeBuffer.append(data.constData() + offset, data.size() - offset);
+            if (m_writeNotifier) {
+                m_writeNotifier->setEnabled(true);
+            }
+            return;
         }
         if (written < 0) {
             emit sessionError(QStringLiteral("PTY write failed: %1").arg(QString::fromLocal8Bit(std::strerror(errno))));
         }
-        break;
+        return;
     }
 #else
-    m_process->write(data);
+    if (!m_conPty || !m_conPty->running.load()) {
+        return;
+    }
+    {
+        std::lock_guard<std::mutex> lock(m_conPty->writeMutex);
+        m_conPty->writeQueue.append(data);
+    }
+    m_conPty->writeCv.notify_one();
 #endif
 }
 
@@ -242,66 +658,83 @@ void TerminalSession::resizePty(int rows, int cols)
     ws.ws_ypixel = 0;
     ::ioctl(m_masterFd, TIOCSWINSZ, &ws);
 #else
-    Q_UNUSED(rows);
-    Q_UNUSED(cols);
+    if (!m_conPty || !m_conPty->running.load() || !m_conPty->resizePseudoConsole || !m_conPty->pseudoConsole) {
+        return;
+    }
+    const COORD newSize {
+        static_cast<SHORT>(std::clamp(cols, 1, 32767)),
+        static_cast<SHORT>(std::clamp(rows, 1, 32767)),
+    };
+    const HRESULT hr = m_conPty->resizePseudoConsole(m_conPty->pseudoConsole, newSize);
+    if (FAILED(hr)) {
+        emit sessionError(QStringLiteral("ResizePseudoConsole failed: %1").arg(formatHResultError(hr)));
+    }
 #endif
 }
 
 void TerminalSession::terminate()
 {
 #if defined(Q_OS_UNIX)
-    if (m_exitCheckTimer) {
-        m_exitCheckTimer->stop();
-    }
-
     const qint64 pid = m_childPid;
     if (pid <= 0) {
         closeMasterPty();
         return;
     }
-
     closeMasterPty();
-    ::kill(static_cast<pid_t>(pid), SIGHUP);
-
-    int status = 0;
-    for (int i = 0; i < 25; ++i) {
-        const pid_t result = ::waitpid(static_cast<pid_t>(pid), &status, WNOHANG);
-        if (result == static_cast<pid_t>(pid)) {
-            m_childPid = -1;
-            const int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : 0;
-            if (!m_exitEmitted) {
-                m_exitEmitted = true;
-                emit processExited(exitCode);
-            }
-            return;
-        }
-        if (result < 0 && errno == ECHILD) {
-            m_childPid = -1;
-            if (!m_exitEmitted) {
-                m_exitEmitted = true;
-                emit processExited(0);
-            }
-            return;
-        }
-        ::usleep(20000);
+    if (!m_terminationRequested) {
+        m_terminationRequested = true;
+        m_forceKillSent = false;
+        m_terminationStartMs = QDateTime::currentMSecsSinceEpoch();
+        ::kill(static_cast<pid_t>(pid), SIGHUP);
     }
-
-    ::kill(static_cast<pid_t>(pid), SIGKILL);
-    ::waitpid(static_cast<pid_t>(pid), &status, 0);
-    m_childPid = -1;
-    if (!m_exitEmitted) {
-        m_exitEmitted = true;
-        emit processExited(WIFEXITED(status) ? WEXITSTATUS(status) : 0);
+    if (m_exitCheckTimer && !m_exitCheckTimer->isActive()) {
+        m_exitCheckTimer->start();
     }
 #else
-    if (!m_process || m_process->state() == QProcess::NotRunning) {
+    if (!m_conPty) {
         return;
     }
-    m_process->terminate();
-    if (!m_process->waitForFinished(1000)) {
-        m_process->kill();
-        m_process->waitForFinished(1000);
+
+    ConPtyState *state = m_conPty;
+    state->stopRequested.store(true);
+    state->writeCv.notify_all();
+
+    if (state->closePseudoConsole && state->pseudoConsole) {
+        state->closePseudoConsole(state->pseudoConsole);
+        state->pseudoConsole = nullptr;
     }
+
+    if (isValidHandle(state->processInfo.hProcess)) {
+        const DWORD waitResult = ::WaitForSingleObject(state->processInfo.hProcess, 1000);
+        if (waitResult == WAIT_TIMEOUT) {
+            ::TerminateProcess(state->processInfo.hProcess, 1);
+        }
+    }
+
+    if (state->writerThread.joinable()) {
+        state->writerThread.join();
+    }
+    if (state->readerThread.joinable()) {
+        state->readerThread.join();
+    }
+    if (state->waitThread.joinable()) {
+        state->waitThread.join();
+    }
+
+    closeHandleSafely(state->ptyInputRead);
+    closeHandleSafely(state->ptyInputWrite);
+    closeHandleSafely(state->ptyOutputRead);
+    closeHandleSafely(state->ptyOutputWrite);
+    closeHandleSafely(state->processInfo.hThread);
+    closeHandleSafely(state->processInfo.hProcess);
+    state->running.store(false);
+
+    if (!state->exitEmitted.exchange(true)) {
+        emit processExited(0);
+    }
+
+    delete state;
+    m_conPty = nullptr;
 #endif
 }
 
@@ -346,45 +779,99 @@ void TerminalSession::onMasterPtyReadyRead()
     }
 }
 
-void TerminalSession::onChildExitCheck()
+void TerminalSession::onMasterPtyWritable()
 {
-    if (m_childPid <= 0) {
+    flushPendingWriteBuffer();
+}
+
+void TerminalSession::flushPendingWriteBuffer()
+{
+    if (m_masterFd < 0 || m_writeBuffer.isEmpty()) {
+        if (m_writeNotifier) {
+            m_writeNotifier->setEnabled(false);
+        }
         return;
     }
 
-    int status = 0;
-    const pid_t result = ::waitpid(static_cast<pid_t>(m_childPid), &status, WNOHANG);
-    if (result == 0) {
-        return;
-    }
-
-    if (result < 0) {
-        if (errno == ECHILD) {
-            m_childPid = -1;
-            closeMasterPty();
-            if (!m_exitEmitted) {
-                m_exitEmitted = true;
-                emit processExited(0);
-            }
-            if (m_exitCheckTimer) {
-                m_exitCheckTimer->stop();
+    while (!m_writeBuffer.isEmpty()) {
+        const ssize_t written = ::write(m_masterFd, m_writeBuffer.constData(), static_cast<size_t>(m_writeBuffer.size()));
+        if (written > 0) {
+            m_writeBuffer.remove(0, static_cast<qsizetype>(written));
+            continue;
+        }
+        if (written < 0 && errno == EINTR) {
+            continue;
+        }
+        if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            if (m_writeNotifier) {
+                m_writeNotifier->setEnabled(true);
             }
             return;
         }
-        emit sessionError(QStringLiteral("waitpid failed: %1").arg(QString::fromLocal8Bit(std::strerror(errno))));
+        if (written < 0) {
+            emit sessionError(QStringLiteral("PTY write failed: %1").arg(QString::fromLocal8Bit(std::strerror(errno))));
+        }
+        m_writeBuffer.clear();
+        if (m_writeNotifier) {
+            m_writeNotifier->setEnabled(false);
+        }
         return;
     }
 
-    const int exitCode = WIFEXITED(status) ? WEXITSTATUS(status) : 0;
+    if (m_writeNotifier) {
+        m_writeNotifier->setEnabled(false);
+    }
+}
+
+void TerminalSession::finalizeChildExit(int status, bool hasExitStatus)
+{
     m_childPid = -1;
+    m_terminationRequested = false;
+    m_forceKillSent = false;
+    m_terminationStartMs = 0;
     closeMasterPty();
     if (m_exitCheckTimer) {
         m_exitCheckTimer->stop();
     }
     if (!m_exitEmitted) {
         m_exitEmitted = true;
+        const int exitCode = hasExitStatus && WIFEXITED(status) ? WEXITSTATUS(status) : 0;
         emit processExited(exitCode);
     }
+}
+
+void TerminalSession::onChildExitCheck()
+{
+    if (m_childPid <= 0) {
+        if (m_exitCheckTimer) {
+            m_exitCheckTimer->stop();
+        }
+        return;
+    }
+
+    int status = 0;
+    const pid_t result = ::waitpid(static_cast<pid_t>(m_childPid), &status, WNOHANG);
+    if (result == 0) {
+        if (m_terminationRequested && !m_forceKillSent) {
+            const qint64 elapsedMs = QDateTime::currentMSecsSinceEpoch() - m_terminationStartMs;
+            if (elapsedMs >= 500) {
+                ::kill(static_cast<pid_t>(m_childPid), SIGKILL);
+                m_forceKillSent = true;
+            }
+        }
+        return;
+    }
+
+    if (result < 0) {
+        if (errno == ECHILD) {
+            finalizeChildExit(0, false);
+            return;
+        }
+        emit sessionError(QStringLiteral("waitpid failed: %1").arg(QString::fromLocal8Bit(std::strerror(errno))));
+        return;
+    }
+
+    finalizeChildExit(status, true);
 }
 
 void TerminalSession::closeMasterPty()
@@ -394,6 +881,12 @@ void TerminalSession::closeMasterPty()
         delete m_readNotifier;
         m_readNotifier = nullptr;
     }
+    if (m_writeNotifier) {
+        m_writeNotifier->setEnabled(false);
+        delete m_writeNotifier;
+        m_writeNotifier = nullptr;
+    }
+    m_writeBuffer.clear();
     if (m_masterFd >= 0) {
         ::close(m_masterFd);
         m_masterFd = -1;

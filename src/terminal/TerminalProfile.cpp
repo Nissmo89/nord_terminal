@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QtGlobal>
 
 namespace nord::terminal {
 
@@ -17,6 +18,16 @@ TerminalProfile TerminalProfile::defaultForHost()
     profile.shellPath = QStringLiteral("/bin/zsh");
     profile.arguments = {QStringLiteral("-i")};
 #else
+    const QString shellEnv = qEnvironmentVariable("SHELL");
+    if (!shellEnv.isEmpty() && QFileInfo(shellEnv).isExecutable()) {
+        const QFileInfo shellInfo(shellEnv);
+        profile.name = shellInfo.fileName();
+        profile.shellPath = shellEnv;
+        profile.arguments = {QStringLiteral("-i")};
+        profile.workingDirectory = QDir::homePath();
+        return profile;
+    }
+
     const QString zshPath = QStringLiteral("/bin/zsh");
     if (QFileInfo(zshPath).exists() && QFileInfo(zshPath).isExecutable()) {
         profile.name = QStringLiteral("zsh");

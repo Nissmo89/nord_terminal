@@ -5,7 +5,6 @@
 
 #include "nordterminal/TerminalProfile.h"
 
-class QProcess;
 class QSocketNotifier;
 class QTimer;
 
@@ -33,16 +32,25 @@ signals:
 private:
 #if defined(Q_OS_UNIX)
     void onMasterPtyReadyRead();
+    void onMasterPtyWritable();
     void onChildExitCheck();
+    void flushPendingWriteBuffer();
+    void finalizeChildExit(int status, bool hasExitStatus);
     void closeMasterPty();
 
     int m_masterFd = -1;
     qint64 m_childPid = -1;
     bool m_exitEmitted = false;
     QSocketNotifier *m_readNotifier = nullptr;
+    QSocketNotifier *m_writeNotifier = nullptr;
     QTimer *m_exitCheckTimer = nullptr;
+    QByteArray m_writeBuffer;
+    bool m_terminationRequested = false;
+    bool m_forceKillSent = false;
+    qint64 m_terminationStartMs = 0;
 #else
-    QProcess *m_process = nullptr;
+    struct ConPtyState;
+    ConPtyState *m_conPty = nullptr;
 #endif
     TerminalProfile m_profile;
 };

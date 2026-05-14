@@ -51,4 +51,13 @@ std::vector<QString> TerminalScrollback::slice(int start, int count) const
     return output;
 }
 
+const QString &TerminalScrollback::lineAt(int index) const
+{
+    static const QString empty;
+    if (index < 0 || index >= static_cast<int>(m_lines.size())) {
+        return empty;
+    }
+    return m_lines[static_cast<std::size_t>(index)];
+}
+
 } // namespace nord::terminal

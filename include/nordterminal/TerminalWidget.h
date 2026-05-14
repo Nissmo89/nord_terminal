@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractScrollArea>
+#include <QTimer>
 
 #include "nordterminal/TerminalEmulator.h"
 #include "nordterminal/TerminalProfile.h"
@@ -30,6 +31,7 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent *event) override;
     void focusInEvent(QFocusEvent *event) override;
     void focusOutEvent(QFocusEvent *event) override;
@@ -37,8 +39,15 @@ protected:
 private:
     void recalculateGrid();
     void consumeSessionOutput(const QByteArray &data);
-    [[nodiscard]] QPoint toCell(const QPoint &pixelPos) const;
-    [[nodiscard]] bool cellSelected(int row, int col) const;
+    void resetCursorBlink();
+    [[nodiscard]] int visibleStartLine() const;
+    [[nodiscard]] int totalLines() const;
+    [[nodiscard]] QPoint toViewportCell(const QPoint &pixelPos) const;
+    [[nodiscard]] QPoint toAbsoluteCell(const QPoint &pixelPos) const;
+    [[nodiscard]] QString lineTextAtAbsolute(int absoluteLine) const;
+    [[nodiscard]] QString selectedText() const;
+    [[nodiscard]] bool cellSelected(int absoluteRow, int col) const;
+    void maybeSendMouseReport(QMouseEvent *event, bool release);
 
     TerminalTheme m_theme = TerminalTheme::nordDark();
     TerminalEmulator m_emulator;
@@ -50,6 +59,9 @@ private:
     int m_cellHeight = 0;
     int m_ascent = 0;
     int m_scrollOffset = 0;
+    int m_wheelRemainder = 0;
+    QTimer m_cursorBlinkTimer;
+    bool m_cursorBlinkVisible = true;
 };
 
 } // namespace nord::terminal

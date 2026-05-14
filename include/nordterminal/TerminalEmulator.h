@@ -23,9 +23,15 @@ public:
     [[nodiscard]] QPoint cursorPosition() const;
     [[nodiscard]] bool cursorVisible() const;
     [[nodiscard]] bool applicationCursorKeys() const;
+    [[nodiscard]] bool bracketedPasteMode() const;
+    [[nodiscard]] bool mouseTrackingEnabled() const;
+    [[nodiscard]] bool mouseButtonTrackingEnabled() const;
+    [[nodiscard]] bool mouseAnyTrackingEnabled() const;
+    [[nodiscard]] bool mouseSgrMode() const;
     [[nodiscard]] TerminalCell cellAt(int row, int col) const;
     [[nodiscard]] QString lineText(int row) const;
     std::vector<QString> takeScrolledLines();
+    [[nodiscard]] bool takeScrollbackClearRequested();
 
 private:
     enum class ParserState {
@@ -42,6 +48,13 @@ private:
         DecSpecialGraphics
     };
 
+    enum class MouseTrackingMode {
+        Disabled,
+        Normal,
+        Button,
+        Any
+    };
+
     struct RenderStyle {
         TerminalColorIndex foreground = TerminalColorIndex::Default;
         TerminalColorIndex background = TerminalColorIndex::Default;
@@ -50,8 +63,10 @@ private:
         QColor foregroundRgb = QColor();
         QColor backgroundRgb = QColor();
         bool bold = false;
+        bool dim = false;
         bool italic = false;
         bool underline = false;
+        bool strikethrough = false;
         bool inverse = false;
     };
 
@@ -60,20 +75,25 @@ private:
     void flushIncompleteUtf8();
     static QColor ansi256ToColor(int index);
     QChar mapDecSpecialGraphicsChar(unsigned char ch) const;
+    static bool isWideCharacter(QChar ch);
     Charset activeCharset() const;
     void handleEscapeIntermediateFinal(unsigned char finalByte);
     TerminalCell makeEraseCell() const;
     void putCharacter(QChar ch);
-    void scrollUp();
+    void scrollUp(int topRow, int bottomRow);
+    void scrollDown(int topRow, int bottomRow);
     void newline();
     void applySgr(const std::vector<int> &codes);
     void clearScreen();
     void clearLine(int row, int startCol, int endCol);
     void eraseInDisplay(int mode);
     void eraseInLine(int mode);
+    bool tryHandleDecrqm(char prefix, char finalChar, const QByteArray &params);
     void handleCsi(char finalChar, QByteArray params);
     void handleOsc(const QByteArray &data);
     void setPrivateMode(int mode, bool enabled);
+    void resetScrollRegion();
+    void setScrollRegion(int top, int bottom);
     [[nodiscard]] std::vector<int> parseCsiParameters(const QByteArray &params) const;
     [[nodiscard]] int effectiveParam(const std::vector<int> &params, int index, int fallback) const;
     [[nodiscard]] std::vector<TerminalCell> &activeCells();
@@ -91,8 +111,13 @@ private:
     int m_savedCursorColAlt = 0;
     bool m_cursorVisible = true;
     bool m_applicationCursorKeys = false;
+    bool m_bracketedPasteMode = false;
+    MouseTrackingMode m_mouseTrackingMode = MouseTrackingMode::Disabled;
+    bool m_mouseSgrMode = false;
     bool m_synchronizedOutputMode = false;
     bool m_inAltBuffer = false;
+    int m_scrollTop = 0;
+    int m_scrollBottom = 23;
     ParserState m_parserState = ParserState::Ground;
     QByteArray m_csiParams;
     QByteArray m_oscData;
@@ -107,6 +132,7 @@ private:
     std::vector<TerminalCell> m_mainCells;
     std::vector<TerminalCell> m_altCells;
     std::vector<QString> m_scrolledLines;
+    bool m_scrollbackClearRequested = false;
 };
 
 } // namespace nord::terminal

@@ -1,6 +1,19 @@
 #include "nordterminal/TerminalTheme.h"
 
+#include <QFontDatabase>
+#include <QFontInfo>
+
 namespace nord::terminal {
+
+QFont TerminalTheme::defaultTerminalFont()
+{
+    QFont font(QStringLiteral("JetBrains Mono"), 11);
+    if (!QFontInfo(font).fixedPitch()) {
+        font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+        font.setPointSize(11);
+    }
+    return font;
+}
 
 QColor TerminalTheme::resolveForeground(TerminalColorIndex index) const
 {

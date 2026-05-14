@@ -25,7 +25,8 @@ struct TerminalTheme {
         QColor("#81A1C1"), QColor("#B48EAD"), QColor("#8FBCBB"), QColor("#ECEFF4")
     };
 
-    QFont font = QFont(QStringLiteral("JetBrains Mono"), 11);
+    static QFont defaultTerminalFont();
+    QFont font = defaultTerminalFont();
 
     [[nodiscard]] QColor resolveForeground(TerminalColorIndex index) const;
     [[nodiscard]] QColor resolveBackground(TerminalColorIndex index) const;

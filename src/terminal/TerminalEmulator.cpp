@@ -1,6 +1,7 @@
 #include "nordterminal/TerminalEmulator.h"
 
 #include <QByteArray>
+#include <QApplication>
 #include <QList>
 
 #include <algorithm>
@@ -20,6 +21,7 @@ bool isFinalCsiByte(unsigned char ch)
 TerminalEmulator::TerminalEmulator(int rows, int cols)
     : m_rows(std::max(1, rows))
     , m_cols(std::max(1, cols))
+    , m_scrollBottom(m_rows - 1)
     , m_mainCells(static_cast<std::size_t>(m_rows * m_cols))
     , m_altCells(static_cast<std::size_t>(m_rows * m_cols))
 {
@@ -56,6 +58,8 @@ void TerminalEmulator::resize(int rows, int cols)
     m_savedCursorColMain = std::clamp(m_savedCursorColMain, 0, m_cols - 1);
     m_savedCursorRowAlt = std::clamp(m_savedCursorRowAlt, 0, m_rows - 1);
     m_savedCursorColAlt = std::clamp(m_savedCursorColAlt, 0, m_cols - 1);
+    m_scrollTop = std::clamp(m_scrollTop, 0, m_rows - 1);
+    m_scrollBottom = std::clamp(m_scrollBottom, m_scrollTop, m_rows - 1);
 }
 
 void TerminalEmulator::reset()
@@ -70,8 +74,12 @@ void TerminalEmulator::reset()
     m_savedCursorColAlt = 0;
     m_cursorVisible = true;
     m_applicationCursorKeys = false;
+    m_bracketedPasteMode = false;
+    m_mouseTrackingMode = MouseTrackingMode::Disabled;
+    m_mouseSgrMode = false;
     m_synchronizedOutputMode = false;
     m_inAltBuffer = false;
+    resetScrollRegion();
     m_parserState = ParserState::Ground;
     m_csiParams.clear();
     m_oscData.clear();
@@ -84,6 +92,7 @@ void TerminalEmulator::reset()
     m_useG1 = false;
     m_style = {};
     m_scrolledLines.clear();
+    m_scrollbackClearRequested = false;
 }
 
 void TerminalEmulator::feedOutput(const QByteArray &data)
@@ -125,6 +134,31 @@ bool TerminalEmulator::applicationCursorKeys() const
     return m_applicationCursorKeys;
 }
 
+bool TerminalEmulator::bracketedPasteMode() const
+{
+    return m_bracketedPasteMode;
+}
+
+bool TerminalEmulator::mouseTrackingEnabled() const
+{
+    return m_mouseTrackingMode != MouseTrackingMode::Disabled;
+}
+
+bool TerminalEmulator::mouseButtonTrackingEnabled() const
+{
+    return m_mouseTrackingMode == MouseTrackingMode::Button || m_mouseTrackingMode == MouseTrackingMode::Any;
+}
+
+bool TerminalEmulator::mouseAnyTrackingEnabled() const
+{
+    return m_mouseTrackingMode == MouseTrackingMode::Any;
+}
+
+bool TerminalEmulator::mouseSgrMode() const
+{
+    return m_mouseSgrMode;
+}
+
 TerminalCell TerminalEmulator::cellAt(int row, int col) const
 {
     if (row < 0 || col < 0 || row >= m_rows || col >= m_cols) {
@@ -142,7 +176,10 @@ QString TerminalEmulator::lineText(int row) const
     QString text;
     text.reserve(m_cols);
     for (int col = 0; col < m_cols; ++col) {
-        text.append(cellAt(row, col).character);
+        const TerminalCell cell = cellAt(row, col);
+        if (!cell.wideContinuation) {
+            text.append(cell.character);
+        }
     }
     return text;
 }
@@ -152,6 +189,13 @@ std::vector<QString> TerminalEmulator::takeScrolledLines()
     std::vector<QString> lines = std::move(m_scrolledLines);
     m_scrolledLines.clear();
     return lines;
+}
+
+bool TerminalEmulator::takeScrollbackClearRequested()
+{
+    const bool requested = m_scrollbackClearRequested;
+    m_scrollbackClearRequested = false;
+    return requested;
 }
 
 void TerminalEmulator::feedByte(unsigned char ch)
@@ -207,6 +251,13 @@ void TerminalEmulator::feedByte(unsigned char ch)
             const int target = ((m_cursorCol / 8) + 1) * 8;
             while (m_cursorCol < target) {
                 putCharacter(QChar(' '));
+            }
+            return;
+        }
+        if (ch == 0x07) {
+            flushIncompleteUtf8();
+            if (QApplication::instance()) {
+                QApplication::beep();
             }
             return;
         }
@@ -268,7 +319,9 @@ void TerminalEmulator::feedByte(unsigned char ch)
             return;
         }
         if (ch == 'M') {
-            if (m_cursorRow > 0) {
+            if (m_cursorRow == m_scrollTop) {
+                scrollDown(m_scrollTop, m_scrollBottom);
+            } else if (m_cursorRow > 0) {
                 --m_cursorRow;
             }
             return;
@@ -512,6 +565,20 @@ QChar TerminalEmulator::mapDecSpecialGraphicsChar(unsigned char ch) const
     }
 }
 
+bool TerminalEmulator::isWideCharacter(QChar ch)
+{
+    const ushort u = ch.unicode();
+    return (u >= 0x1100 && u <= 0x115f)
+        || (u >= 0x2329 && u <= 0x232a)
+        || (u >= 0x2e80 && u <= 0xa4cf)
+        || (u >= 0xac00 && u <= 0xd7a3)
+        || (u >= 0xf900 && u <= 0xfaff)
+        || (u >= 0xfe10 && u <= 0xfe19)
+        || (u >= 0xfe30 && u <= 0xfe6f)
+        || (u >= 0xff00 && u <= 0xff60)
+        || (u >= 0xffe0 && u <= 0xffe6);
+}
+
 TerminalEmulator::Charset TerminalEmulator::activeCharset() const
 {
     return m_useG1 ? m_charsetG1 : m_charsetG0;
@@ -546,6 +613,11 @@ void TerminalEmulator::putCharacter(QChar ch)
         newline();
     }
 
+    const int charWidth = isWideCharacter(ch) ? 2 : 1;
+    if (charWidth == 2 && m_cursorCol == m_cols - 1) {
+        newline();
+    }
+
     TerminalCell cell;
     cell.character = ch;
     cell.foreground = m_style.foreground;
@@ -555,12 +627,22 @@ void TerminalEmulator::putCharacter(QChar ch)
     cell.foregroundRgb = m_style.foregroundRgb;
     cell.backgroundRgb = m_style.backgroundRgb;
     cell.bold = m_style.bold;
+    cell.dim = m_style.dim;
     cell.italic = m_style.italic;
     cell.underline = m_style.underline;
+    cell.strikethrough = m_style.strikethrough;
     cell.inverse = m_style.inverse;
+    cell.wide = charWidth == 2;
+    cell.wideContinuation = false;
 
-    activeCells()[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol))] = cell;
-    ++m_cursorCol;
+    auto &cells = activeCells();
+    cells[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol))] = cell;
+    if (charWidth == 2 && m_cursorCol + 1 < m_cols) {
+        TerminalCell continuation = makeEraseCell();
+        continuation.wideContinuation = true;
+        cells[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol + 1))] = continuation;
+    }
+    m_cursorCol += charWidth;
 }
 
 TerminalCell TerminalEmulator::makeEraseCell() const
@@ -574,38 +656,69 @@ TerminalCell TerminalEmulator::makeEraseCell() const
     cell.foregroundRgb = m_style.foregroundRgb;
     cell.backgroundRgb = m_style.backgroundRgb;
     cell.bold = false;
+    cell.dim = false;
     cell.italic = false;
     cell.underline = false;
+    cell.strikethrough = false;
     cell.inverse = false;
+    cell.wide = false;
+    cell.wideContinuation = false;
     return cell;
 }
 
-void TerminalEmulator::scrollUp()
+void TerminalEmulator::scrollUp(int topRow, int bottomRow)
 {
-    if (!m_inAltBuffer) {
+    const int top = std::clamp(topRow, 0, m_rows - 1);
+    const int bottom = std::clamp(bottomRow, top, m_rows - 1);
+    if (top >= bottom) {
+        return;
+    }
+
+    if (!m_inAltBuffer && top == 0) {
         m_scrolledLines.push_back(lineText(0));
     }
 
     const TerminalCell eraseCell = makeEraseCell();
     auto &cells = activeCells();
-    for (int row = 1; row < m_rows; ++row) {
+    const std::size_t sourceStart = static_cast<std::size_t>((top + 1) * m_cols);
+    const std::size_t sourceEnd = static_cast<std::size_t>((bottom + 1) * m_cols);
+    const std::size_t targetStart = static_cast<std::size_t>(top * m_cols);
+    std::move(cells.begin() + static_cast<std::ptrdiff_t>(sourceStart),
+        cells.begin() + static_cast<std::ptrdiff_t>(sourceEnd),
+        cells.begin() + static_cast<std::ptrdiff_t>(targetStart));
+
+    for (int col = 0; col < m_cols; ++col) {
+        cells[static_cast<std::size_t>(bottom * m_cols + col)] = eraseCell;
+    }
+}
+
+void TerminalEmulator::scrollDown(int topRow, int bottomRow)
+{
+    const int top = std::clamp(topRow, 0, m_rows - 1);
+    const int bottom = std::clamp(bottomRow, top, m_rows - 1);
+    if (top >= bottom) {
+        return;
+    }
+
+    const TerminalCell eraseCell = makeEraseCell();
+    auto &cells = activeCells();
+    for (int row = bottom; row > top; --row) {
         for (int col = 0; col < m_cols; ++col) {
-            cells[static_cast<std::size_t>((row - 1) * m_cols + col)] = cells[static_cast<std::size_t>(row * m_cols + col)];
+            cells[static_cast<std::size_t>(row * m_cols + col)] = cells[static_cast<std::size_t>((row - 1) * m_cols + col)];
         }
     }
     for (int col = 0; col < m_cols; ++col) {
-        cells[static_cast<std::size_t>((m_rows - 1) * m_cols + col)] = eraseCell;
+        cells[static_cast<std::size_t>(top * m_cols + col)] = eraseCell;
     }
 }
 
 void TerminalEmulator::newline()
 {
-    if (m_cursorRow == m_rows - 1) {
-        scrollUp();
+    if (m_cursorRow == m_scrollBottom) {
+        scrollUp(m_scrollTop, m_scrollBottom);
     } else {
-        ++m_cursorRow;
+        m_cursorRow = std::min(m_rows - 1, m_cursorRow + 1);
     }
-    m_cursorCol = 0;
 }
 
 void TerminalEmulator::applySgr(const std::vector<int> &codes)
@@ -620,6 +733,10 @@ void TerminalEmulator::applySgr(const std::vector<int> &codes)
             m_style.bold = true;
             continue;
         }
+        if (code == 2) {
+            m_style.dim = true;
+            continue;
+        }
         if (code == 3) {
             m_style.italic = true;
             continue;
@@ -628,12 +745,17 @@ void TerminalEmulator::applySgr(const std::vector<int> &codes)
             m_style.underline = true;
             continue;
         }
+        if (code == 9) {
+            m_style.strikethrough = true;
+            continue;
+        }
         if (code == 7) {
             m_style.inverse = true;
             continue;
         }
         if (code == 22) {
             m_style.bold = false;
+            m_style.dim = false;
             continue;
         }
         if (code == 23) {
@@ -642,6 +764,10 @@ void TerminalEmulator::applySgr(const std::vector<int> &codes)
         }
         if (code == 24) {
             m_style.underline = false;
+            continue;
+        }
+        if (code == 29) {
+            m_style.strikethrough = false;
             continue;
         }
         if (code == 27) {
@@ -755,8 +881,12 @@ void TerminalEmulator::clearLine(int row, int startCol, int endCol)
 void TerminalEmulator::eraseInDisplay(int mode)
 {
     if (mode == 2 || mode == 3) {
-        std::fill(activeCells().begin(), activeCells().end(), TerminalCell{});
-        moveCursor(0, 0);
+        const TerminalCell eraseCell = makeEraseCell();
+        std::fill(activeCells().begin(), activeCells().end(), eraseCell);
+        if (mode == 3) {
+            m_scrolledLines.clear();
+            m_scrollbackClearRequested = true;
+        }
         return;
     }
 
@@ -789,6 +919,59 @@ void TerminalEmulator::eraseInLine(int mode)
     clearLine(m_cursorRow, m_cursorCol, m_cols - 1);
 }
 
+bool TerminalEmulator::tryHandleDecrqm(char prefix, char finalChar, const QByteArray &params)
+{
+    if (prefix != '?' || finalChar != 'p' || params.isEmpty() || params.back() != '$') {
+        return false;
+    }
+
+    QByteArray modeBytes = params;
+    modeBytes.chop(1);
+    bool ok = false;
+    const int mode = modeBytes.toInt(&ok);
+
+    int state = 0;
+    if (ok) {
+        switch (mode) {
+        case 1:
+            state = m_applicationCursorKeys ? 1 : 2;
+            break;
+        case 25:
+            state = m_cursorVisible ? 1 : 2;
+            break;
+        case 47:
+        case 1047:
+        case 1049:
+            state = m_inAltBuffer ? 1 : 2;
+            break;
+        case 1000:
+            state = m_mouseTrackingMode == MouseTrackingMode::Normal ? 1 : 2;
+            break;
+        case 1002:
+            state = m_mouseTrackingMode == MouseTrackingMode::Button ? 1 : 2;
+            break;
+        case 1003:
+            state = m_mouseTrackingMode == MouseTrackingMode::Any ? 1 : 2;
+            break;
+        case 1006:
+            state = m_mouseSgrMode ? 1 : 2;
+            break;
+        case 2004:
+            state = m_bracketedPasteMode ? 1 : 2;
+            break;
+        case 2026:
+            state = m_synchronizedOutputMode ? 1 : 2;
+            break;
+        default:
+            state = 0;
+            break;
+        }
+    }
+
+    m_pendingResponse.append("\x1b[?" + QByteArray::number(mode) + ";" + QByteArray::number(state) + "$y");
+    return true;
+}
+
 void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
 {
     char prefix = '\0';
@@ -810,34 +993,7 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         return;
     }
 
-    if (prefix == '?' && finalChar == 'p' && params.endsWith('$')) {
-        QByteArray modeBytes = params;
-        modeBytes.chop(1); // strip '$' (DECRQM intermediate)
-        bool ok = false;
-        const int mode = modeBytes.toInt(&ok);
-        int state = 0; // not recognized
-        if (ok) {
-            switch (mode) {
-            case 1:
-                state = m_applicationCursorKeys ? 1 : 2;
-                break;
-            case 25:
-                state = m_cursorVisible ? 1 : 2;
-                break;
-            case 47:
-            case 1047:
-            case 1049:
-                state = m_inAltBuffer ? 1 : 2;
-                break;
-            case 2026:
-                state = m_synchronizedOutputMode ? 1 : 2;
-                break;
-            default:
-                state = 0;
-                break;
-            }
-        }
-        m_pendingResponse.append("\x1b[?" + QByteArray::number(mode) + ";" + QByteArray::number(state) + "$y");
+    if (tryHandleDecrqm(prefix, finalChar, params)) {
         return;
     }
 
@@ -878,6 +1034,30 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         return;
     case 'm':
         applySgr(parsed.empty() ? std::vector<int>{0} : parsed);
+        return;
+    case 'r':
+        if (prefix != '\0') {
+            return;
+        }
+        if (parsed.empty()) {
+            resetScrollRegion();
+            moveCursor(0, 0);
+            return;
+        }
+        {
+            int top = effectiveParam(parsed, 0, 1);
+            int bottom = effectiveParam(parsed, 1, m_rows);
+            if (top == 0) {
+                top = 1;
+            }
+            if (bottom == 0) {
+                bottom = m_rows;
+            }
+            if (top >= 1 && bottom <= m_rows && top < bottom) {
+                setScrollRegion(top - 1, bottom - 1);
+                moveCursor(0, 0);
+            }
+        }
         return;
     case 's':
         if (m_inAltBuffer) {
@@ -955,6 +1135,43 @@ void TerminalEmulator::setPrivateMode(int mode, bool enabled)
         return;
     }
 
+    if (mode == 1000) {
+        if (enabled) {
+            m_mouseTrackingMode = MouseTrackingMode::Normal;
+        } else if (m_mouseTrackingMode == MouseTrackingMode::Normal) {
+            m_mouseTrackingMode = MouseTrackingMode::Disabled;
+        }
+        return;
+    }
+
+    if (mode == 1002) {
+        if (enabled) {
+            m_mouseTrackingMode = MouseTrackingMode::Button;
+        } else if (m_mouseTrackingMode == MouseTrackingMode::Button) {
+            m_mouseTrackingMode = MouseTrackingMode::Disabled;
+        }
+        return;
+    }
+
+    if (mode == 1003) {
+        if (enabled) {
+            m_mouseTrackingMode = MouseTrackingMode::Any;
+        } else if (m_mouseTrackingMode == MouseTrackingMode::Any) {
+            m_mouseTrackingMode = MouseTrackingMode::Disabled;
+        }
+        return;
+    }
+
+    if (mode == 1006) {
+        m_mouseSgrMode = enabled;
+        return;
+    }
+
+    if (mode == 2004) {
+        m_bracketedPasteMode = enabled;
+        return;
+    }
+
     if (mode == 2026) {
         m_synchronizedOutputMode = enabled;
         return;
@@ -968,14 +1185,33 @@ void TerminalEmulator::setPrivateMode(int mode, bool enabled)
             m_inAltBuffer = true;
             m_cursorRow = 0;
             m_cursorCol = 0;
+            resetScrollRegion();
             return;
         }
         if (!enabled && m_inAltBuffer) {
             m_inAltBuffer = false;
             moveCursor(m_savedCursorRowMain, m_savedCursorColMain);
+            resetScrollRegion();
             return;
         }
     }
+}
+
+void TerminalEmulator::resetScrollRegion()
+{
+    m_scrollTop = 0;
+    m_scrollBottom = std::max(0, m_rows - 1);
+}
+
+void TerminalEmulator::setScrollRegion(int top, int bottom)
+{
+    const int clampedTop = std::clamp(top, 0, m_rows - 1);
+    const int clampedBottom = std::clamp(bottom, 0, m_rows - 1);
+    if (clampedTop >= clampedBottom) {
+        return;
+    }
+    m_scrollTop = clampedTop;
+    m_scrollBottom = clampedBottom;
 }
 
 std::vector<int> TerminalEmulator::parseCsiParameters(const QByteArray &params) const

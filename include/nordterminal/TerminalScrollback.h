@@ -15,6 +15,7 @@ public:
     [[nodiscard]] int maxLines() const;
     void setMaxLines(int maxLines);
     [[nodiscard]] std::vector<QString> slice(int start, int count) const;
+    [[nodiscard]] const QString &lineAt(int index) const;
 
 private:
     int m_maxLines = 10000;
