@@ -12,6 +12,8 @@ QFont TerminalTheme::defaultTerminalFont()
         font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
         font.setPointSize(11);
     }
+    font.setKerning(false);
+    font.setHintingPreference(QFont::PreferFullHinting);
     return font;
 }
 

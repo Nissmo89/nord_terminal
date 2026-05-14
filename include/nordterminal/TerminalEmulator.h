@@ -33,6 +33,8 @@ public:
     [[nodiscard]] QString lineText(int row) const;
     std::vector<QString> takeScrolledLines();
     [[nodiscard]] bool takeScrollbackClearRequested();
+    [[nodiscard]] bool takeDirtyRowSpan(int &topRow, int &bottomRow);
+    [[nodiscard]] int takePendingViewportScrollLines();
 
 private:
     enum class ParserState {
@@ -101,6 +103,10 @@ private:
     [[nodiscard]] const std::vector<TerminalCell> &activeCells() const;
     void moveCursor(int row, int col);
     [[nodiscard]] int index(int row, int col) const;
+    void markDirtyAll();
+    void markDirtyRow(int row);
+    void markDirtyRange(int topRow, int bottomRow);
+    void recordViewportScroll(int lines);
 
     int m_rows = 24;
     int m_cols = 80;
@@ -134,6 +140,10 @@ private:
     std::vector<TerminalCell> m_altCells;
     std::vector<QString> m_scrolledLines;
     bool m_scrollbackClearRequested = false;
+    bool m_hasDirtyRows = true;
+    int m_dirtyTopRow = 0;
+    int m_dirtyBottomRow = 0;
+    int m_pendingViewportScrollLines = 0;
 };
 
 } // namespace nord::terminal

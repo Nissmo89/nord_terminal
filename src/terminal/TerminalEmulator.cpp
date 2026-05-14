@@ -25,6 +25,7 @@ TerminalEmulator::TerminalEmulator(int rows, int cols)
     , m_mainCells(static_cast<std::size_t>(m_rows * m_cols))
     , m_altCells(static_cast<std::size_t>(m_rows * m_cols))
 {
+    markDirtyAll();
 }
 
 void TerminalEmulator::resize(int rows, int cols)
@@ -60,6 +61,8 @@ void TerminalEmulator::resize(int rows, int cols)
     m_savedCursorColAlt = std::clamp(m_savedCursorColAlt, 0, m_cols - 1);
     m_scrollTop = std::clamp(m_scrollTop, 0, m_rows - 1);
     m_scrollBottom = std::clamp(m_scrollBottom, m_scrollTop, m_rows - 1);
+    markDirtyAll();
+    m_pendingViewportScrollLines = 0;
 }
 
 void TerminalEmulator::reset()
@@ -93,6 +96,8 @@ void TerminalEmulator::reset()
     m_style = {};
     m_scrolledLines.clear();
     m_scrollbackClearRequested = false;
+    markDirtyAll();
+    m_pendingViewportScrollLines = 0;
 }
 
 void TerminalEmulator::feedOutput(const QByteArray &data)
@@ -207,6 +212,29 @@ bool TerminalEmulator::takeScrollbackClearRequested()
     const bool requested = m_scrollbackClearRequested;
     m_scrollbackClearRequested = false;
     return requested;
+}
+
+bool TerminalEmulator::takeDirtyRowSpan(int &topRow, int &bottomRow)
+{
+    if (!m_hasDirtyRows) {
+        topRow = 0;
+        bottomRow = -1;
+        return false;
+    }
+
+    topRow = m_dirtyTopRow;
+    bottomRow = m_dirtyBottomRow;
+    m_hasDirtyRows = false;
+    m_dirtyTopRow = 0;
+    m_dirtyBottomRow = -1;
+    return true;
+}
+
+int TerminalEmulator::takePendingViewportScrollLines()
+{
+    const int lines = m_pendingViewportScrollLines;
+    m_pendingViewportScrollLines = 0;
+    return lines;
 }
 
 void TerminalEmulator::feedByte(unsigned char ch)
@@ -699,6 +727,7 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
         continuation.wideContinuation = true;
         cells[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol + 1))] = continuation;
     }
+    markDirtyRow(m_cursorRow);
     m_cursorCol += charWidth;
 }
 
@@ -747,6 +776,10 @@ void TerminalEmulator::scrollUp(int topRow, int bottomRow)
     for (int col = 0; col < m_cols; ++col) {
         cells[static_cast<std::size_t>(bottom * m_cols + col)] = eraseCell;
     }
+    markDirtyRange(top, bottom);
+    if (top == 0 && bottom == m_rows - 1) {
+        recordViewportScroll(-1);
+    }
 }
 
 void TerminalEmulator::scrollDown(int topRow, int bottomRow)
@@ -766,6 +799,10 @@ void TerminalEmulator::scrollDown(int topRow, int bottomRow)
     }
     for (int col = 0; col < m_cols; ++col) {
         cells[static_cast<std::size_t>(top * m_cols + col)] = eraseCell;
+    }
+    markDirtyRange(top, bottom);
+    if (top == 0 && bottom == m_rows - 1) {
+        recordViewportScroll(1);
     }
 }
 
@@ -916,6 +953,8 @@ void TerminalEmulator::clearScreen()
     std::fill(activeCells().begin(), activeCells().end(), eraseCell);
     m_cursorRow = 0;
     m_cursorCol = 0;
+    markDirtyAll();
+    m_pendingViewportScrollLines = 0;
 }
 
 void TerminalEmulator::clearLine(int row, int startCol, int endCol)
@@ -933,6 +972,7 @@ void TerminalEmulator::clearLine(int row, int startCol, int endCol)
     for (int col = from; col <= to; ++col) {
         cells[static_cast<std::size_t>(index(row, col))] = eraseCell;
     }
+    markDirtyRow(row);
 }
 
 void TerminalEmulator::eraseInDisplay(int mode)
@@ -940,6 +980,8 @@ void TerminalEmulator::eraseInDisplay(int mode)
     if (mode == 2 || mode == 3) {
         const TerminalCell eraseCell = makeEraseCell();
         std::fill(activeCells().begin(), activeCells().end(), eraseCell);
+        markDirtyAll();
+        m_pendingViewportScrollLines = 0;
         if (mode == 3) {
             m_scrolledLines.clear();
             m_scrollbackClearRequested = true;
@@ -1188,6 +1230,9 @@ void TerminalEmulator::setPrivateMode(int mode, bool enabled)
     }
 
     if (mode == 25) {
+        if (m_cursorVisible != enabled) {
+            markDirtyRow(m_cursorRow);
+        }
         m_cursorVisible = enabled;
         return;
     }
@@ -1243,12 +1288,16 @@ void TerminalEmulator::setPrivateMode(int mode, bool enabled)
             m_cursorRow = 0;
             m_cursorCol = 0;
             resetScrollRegion();
+            markDirtyAll();
+            m_pendingViewportScrollLines = 0;
             return;
         }
         if (!enabled && m_inAltBuffer) {
             m_inAltBuffer = false;
             moveCursor(m_savedCursorRowMain, m_savedCursorColMain);
             resetScrollRegion();
+            markDirtyAll();
+            m_pendingViewportScrollLines = 0;
             return;
         }
     }
@@ -1314,6 +1363,48 @@ std::vector<TerminalCell> &TerminalEmulator::activeCells()
 const std::vector<TerminalCell> &TerminalEmulator::activeCells() const
 {
     return m_inAltBuffer ? m_altCells : m_mainCells;
+}
+
+void TerminalEmulator::markDirtyAll()
+{
+    m_hasDirtyRows = true;
+    m_dirtyTopRow = 0;
+    m_dirtyBottomRow = std::max(0, m_rows - 1);
+}
+
+void TerminalEmulator::markDirtyRow(int row)
+{
+    if (row < 0 || row >= m_rows) {
+        return;
+    }
+    markDirtyRange(row, row);
+}
+
+void TerminalEmulator::markDirtyRange(int topRow, int bottomRow)
+{
+    const int top = std::clamp(topRow, 0, std::max(0, m_rows - 1));
+    const int bottom = std::clamp(bottomRow, 0, std::max(0, m_rows - 1));
+    if (top > bottom) {
+        return;
+    }
+
+    if (!m_hasDirtyRows) {
+        m_hasDirtyRows = true;
+        m_dirtyTopRow = top;
+        m_dirtyBottomRow = bottom;
+        return;
+    }
+
+    m_dirtyTopRow = std::min(m_dirtyTopRow, top);
+    m_dirtyBottomRow = std::max(m_dirtyBottomRow, bottom);
+}
+
+void TerminalEmulator::recordViewportScroll(int lines)
+{
+    if (lines == 0) {
+        return;
+    }
+    m_pendingViewportScrollLines = std::clamp(m_pendingViewportScrollLines + lines, -m_rows, m_rows);
 }
 
 void TerminalEmulator::moveCursor(int row, int col)

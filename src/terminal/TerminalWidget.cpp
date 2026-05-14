@@ -91,6 +91,8 @@ QFont withSymbolFallbacks(const QFont &baseFont)
     if (!deduplicatedFamilies.isEmpty()) {
         font.setFamilies(deduplicatedFamilies);
     }
+    font.setKerning(false);
+    font.setHintingPreference(QFont::PreferFullHinting);
     font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
     return font;
 }
@@ -104,6 +106,8 @@ TerminalWidget::TerminalWidget(QWidget *parent)
     m_theme.font = withSymbolFallbacks(m_theme.font);
     setFont(m_theme.font);
     viewport()->setAutoFillBackground(false);
+    viewport()->setAttribute(Qt::WA_OpaquePaintEvent, true);
+    viewport()->setAttribute(Qt::WA_NoSystemBackground, true);
 
     connect(&m_session, &TerminalSession::outputReceived, this, &TerminalWidget::consumeSessionOutput);
     connect(&m_session, &TerminalSession::sessionError, this, [this](const QString &message) {
@@ -304,12 +308,14 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         }
 
         // Pass 2: draw glyphs.
-        for (int col = 0; col < cols; ++col) {
+        for (int col = 0; col < cols;) {
             const TerminalCell &cell = rowCells[static_cast<std::size_t>(col)];
             if (cell.wideContinuation) {
+                ++col;
                 continue;
             }
-            if (cell.character.isEmpty() || cell.character == spaceGlyph) {
+            if (cell.character.isEmpty()) {
+                ++col;
                 continue;
             }
 
@@ -337,9 +343,53 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                 lastStrike = cell.strikethrough;
             }
 
+            // Wide and complex cells are rendered individually to preserve cell alignment.
+            if (cell.wide || cell.character.size() > 1) {
+                if (cell.character != spaceGlyph) {
+                    painter.setPen(foreground);
+                    painter.drawText(col * m_cellWidth, y + m_ascent, cell.character);
+                }
+                col += cell.wide ? 2 : 1;
+                continue;
+            }
+
+            if (cell.character == spaceGlyph) {
+                ++col;
+                continue;
+            }
+
+            const int runStart = col;
+            QString runText = cell.character;
+            int runEnd = col + 1;
+
+            auto sameTextStyle = [&cell](const TerminalCell &other) {
+                return cell.bold == other.bold
+                    && cell.italic == other.italic
+                    && cell.underline == other.underline
+                    && cell.strikethrough == other.strikethrough
+                    && cell.dim == other.dim
+                    && cell.inverse == other.inverse
+                    && cell.foreground == other.foreground
+                    && cell.background == other.background
+                    && cell.hasForegroundRgb == other.hasForegroundRgb
+                    && cell.hasBackgroundRgb == other.hasBackgroundRgb
+                    && cell.foregroundRgb == other.foregroundRgb
+                    && cell.backgroundRgb == other.backgroundRgb;
+            };
+
+            while (runEnd < cols) {
+                const TerminalCell &next = rowCells[static_cast<std::size_t>(runEnd)];
+                if (next.wide || next.wideContinuation || next.character.isEmpty() || next.character.size() > 1
+                    || !sameTextStyle(next)) {
+                    break;
+                }
+                runText.append(next.character);
+                ++runEnd;
+            }
+
             painter.setPen(foreground);
-            const int x = col * m_cellWidth;
-            painter.drawText(x, y + m_ascent, cell.character);
+            painter.drawText(runStart * m_cellWidth, y + m_ascent, runText);
+            col = runEnd;
         }
     }
 
@@ -559,10 +609,37 @@ void TerminalWidget::flushPendingSessionOutput()
     }
 
     const bool stickToBottom = (verticalScrollBar()->value() == verticalScrollBar()->maximum());
+    const QPoint oldCursor = m_emulator.cursorPosition();
+    const bool oldCursorVisible = m_emulator.cursorVisible();
     QByteArray chunk = std::move(m_pendingSessionOutput);
     m_pendingSessionOutput.clear();
 
     m_emulator.feedOutput(chunk);
+    int dirtyTopRow = 0;
+    int dirtyBottomRow = -1;
+    bool hasDirtyRows = m_emulator.takeDirtyRowSpan(dirtyTopRow, dirtyBottomRow);
+    const int viewportScrollLines = m_emulator.takePendingViewportScrollLines();
+    const QPoint newCursor = m_emulator.cursorPosition();
+    const bool newCursorVisible = m_emulator.cursorVisible();
+
+    auto includeDirtyRow = [&hasDirtyRows, &dirtyTopRow, &dirtyBottomRow, this](int row) {
+        const int clampedRow = std::clamp(row, 0, std::max(0, m_emulator.rows() - 1));
+        if (!hasDirtyRows) {
+            hasDirtyRows = true;
+            dirtyTopRow = clampedRow;
+            dirtyBottomRow = clampedRow;
+            return;
+        }
+        dirtyTopRow = std::min(dirtyTopRow, clampedRow);
+        dirtyBottomRow = std::max(dirtyBottomRow, clampedRow);
+    };
+
+    if (oldCursorVisible) {
+        includeDirtyRow(oldCursor.y());
+    }
+    if (newCursorVisible) {
+        includeDirtyRow(newCursor.y());
+    }
 
     if (m_emulator.takeScrollbackClearRequested()) {
         m_scrollback = TerminalScrollback(m_scrollback.maxLines());
@@ -583,7 +660,29 @@ void TerminalWidget::flushPendingSessionOutput()
     }
 
     resetCursorBlink();
-    viewport()->update();
+
+    bool updatedRegion = false;
+    if (hasDirtyRows && m_cellHeight > 0 && m_cellWidth > 0) {
+        const int dirtyRowCount = dirtyBottomRow - dirtyTopRow + 1;
+        if (stickToBottom && m_scrollOffset == 0 && viewportScrollLines != 0 && viewportScrollLines > -m_emulator.rows()
+            && viewportScrollLines < m_emulator.rows() && dirtyRowCount < m_emulator.rows()) {
+            viewport()->scroll(0, viewportScrollLines * m_cellHeight);
+        }
+
+        const int startLine = visibleStartLine();
+        const int scrollbackSize = m_scrollback.size();
+        const int firstVisibleRow = std::max(0, scrollbackSize + dirtyTopRow - startLine);
+        const int lastVisibleRow = std::min(m_emulator.rows() - 1, scrollbackSize + dirtyBottomRow - startLine);
+        if (firstVisibleRow <= lastVisibleRow) {
+            const QRect dirtyRect(0, firstVisibleRow * m_cellHeight, viewport()->width(),
+                (lastVisibleRow - firstVisibleRow + 1) * m_cellHeight);
+            viewport()->update(dirtyRect);
+            updatedRegion = true;
+        }
+    }
+    if (!updatedRegion && !hasDirtyRows) {
+        viewport()->update();
+    }
 
     if (!m_pendingSessionOutput.isEmpty() && !m_outputFlushQueued) {
         m_outputFlushQueued = true;
