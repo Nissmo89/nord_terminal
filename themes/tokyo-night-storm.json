@@ -1,0 +1,32 @@
+{
+  "id": "tokyo-night-storm",
+  "name": "Tokyo Night Storm",
+  "font": {
+    "family": "JetBrains Mono",
+    "size": 11
+  },
+  "colors": {
+    "background": "#24283B",
+    "foreground": "#C0CAF5",
+    "cursor": "#C0CAF5",
+    "selection": "#33467C",
+    "ansi": [
+      "#1D202F",
+      "#F7768E",
+      "#9ECE6A",
+      "#E0AF68",
+      "#7AA2F7",
+      "#BB9AF7",
+      "#7DCFFF",
+      "#A9B1D6",
+      "#414868",
+      "#F7768E",
+      "#9ECE6A",
+      "#E0AF68",
+      "#7AA2F7",
+      "#BB9AF7",
+      "#7DCFFF",
+      "#C0CAF5"
+    ]
+  }
+}
