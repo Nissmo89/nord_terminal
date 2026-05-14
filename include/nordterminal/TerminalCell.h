@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QChar>
 #include <QColor>
+#include <QString>
 
 namespace nord::terminal {
 
@@ -26,7 +26,7 @@ enum class TerminalColorIndex : int {
 };
 
 struct TerminalCell {
-    QChar character = QChar(' ');
+    QString character = QStringLiteral(" ");
     TerminalColorIndex foreground = TerminalColorIndex::Default;
     TerminalColorIndex background = TerminalColorIndex::Default;
     bool hasForegroundRgb = false;

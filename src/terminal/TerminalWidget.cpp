@@ -24,6 +24,12 @@ namespace nord::terminal {
 
 namespace {
 
+QString scalarFromCodepoint(uint codepoint)
+{
+    const char32_t scalar = static_cast<char32_t>(codepoint);
+    return QString::fromUcs4(&scalar, 1);
+}
+
 QFont withSymbolFallbacks(const QFont &baseFont)
 {
     QFont font(baseFont);
@@ -208,6 +214,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
 
         if (absoluteLine < m_scrollback.size()) {
             const QString &line = m_scrollback.lineAt(absoluteLine);
+            const auto codepoints = line.toUcs4();
             for (int col = 0; col < cols; ++col) {
                 const int x = col * m_cellWidth;
                 const bool selected = cellSelected(absoluteLine, col);
@@ -218,10 +225,10 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
             painter.setPen(m_theme.foreground);
             painter.setFont(m_theme.font);
             for (int col = 0; col < cols; ++col) {
-                const QChar ch = (col < line.size()) ? line[col] : QChar(' ');
-                if (ch != QChar(' ')) {
+                const QString glyph = col < codepoints.size() ? scalarFromCodepoint(codepoints[col]) : QString();
+                if (!glyph.isEmpty() && glyph != QStringLiteral(" ")) {
                     const int x = col * m_cellWidth;
-                    painter.drawText(x, y + m_ascent, QString(ch));
+                    painter.drawText(x, y + m_ascent, glyph);
                 }
             }
             continue;
@@ -255,7 +262,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
             if (cell.wideContinuation) {
                 continue;
             }
-            if (cell.character == QChar(' ')) {
+            if (cell.character.isEmpty() || cell.character == QStringLiteral(" ")) {
                 continue;
             }
 
@@ -286,7 +293,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
 
             painter.setPen(foreground);
             const int x = col * m_cellWidth;
-            painter.drawText(x, y + m_ascent, QString(cell.character));
+            painter.drawText(x, y + m_ascent, cell.character);
         }
     }
 
@@ -294,10 +301,10 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         const QPoint cursor = m_emulator.cursorPosition();
         const QRect cursorRect(cursor.x() * m_cellWidth, cursor.y() * m_cellHeight, m_cellWidth, m_cellHeight);
         painter.fillRect(cursorRect, m_theme.cursor);
-        const QChar cursorChar = m_emulator.cellAt(cursor.y(), cursor.x()).character;
+        const QString cursorChar = m_emulator.cellAt(cursor.y(), cursor.x()).character;
         painter.setPen(m_theme.background);
         painter.setFont(m_theme.font);
-        painter.drawText(cursorRect.x(), cursorRect.y() + m_ascent, QString(cursorChar));
+        painter.drawText(cursorRect.x(), cursorRect.y() + m_ascent, cursorChar.isEmpty() ? QStringLiteral(" ") : cursorChar);
     }
 }
 
@@ -603,12 +610,14 @@ QString TerminalWidget::selectedText() const
     QString text;
     for (int row = start.y(); row <= end.y(); ++row) {
         const QString line = lineTextAtAbsolute(row);
+        const auto codepoints = line.toUcs4();
         const int startCol = (row == start.y()) ? std::clamp(start.x(), 0, maxCol) : 0;
         const int endCol = (row == end.y()) ? std::clamp(end.x(), 0, maxCol) : maxCol;
 
         QString segment;
         for (int col = startCol; col <= endCol; ++col) {
-            segment.append(col < line.size() ? line[col] : QChar(' '));
+            const QString glyph = col < codepoints.size() ? scalarFromCodepoint(codepoints[col]) : QString();
+            segment.append(glyph.isEmpty() ? QStringLiteral(" ") : glyph);
         }
         while (!segment.isEmpty() && segment.back() == QChar(' ')) {
             segment.chop(1);

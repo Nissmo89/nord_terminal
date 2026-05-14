@@ -75,11 +75,11 @@ private:
     void flushIncompleteUtf8();
     static QColor ansi256ToColor(int index);
     QChar mapDecSpecialGraphicsChar(unsigned char ch) const;
-    static bool isWideCharacter(QChar ch);
+    static int codepointDisplayWidth(char32_t codepoint);
     Charset activeCharset() const;
     void handleEscapeIntermediateFinal(unsigned char finalByte);
     TerminalCell makeEraseCell() const;
-    void putCharacter(QChar ch);
+    void putCodepoint(char32_t codepoint);
     void scrollUp(int topRow, int bottomRow);
     void scrollDown(int topRow, int bottomRow);
     void newline();

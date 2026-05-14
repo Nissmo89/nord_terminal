@@ -174,12 +174,14 @@ QString TerminalEmulator::lineText(int row) const
     }
 
     QString text;
-    text.reserve(m_cols);
+    text.reserve(m_cols * 2);
     for (int col = 0; col < m_cols; ++col) {
         const TerminalCell cell = cellAt(row, col);
-        if (!cell.wideContinuation) {
-            text.append(cell.character);
+        if (cell.wideContinuation) {
+            text.append(QLatin1Char(' '));
+            continue;
         }
+        text.append(cell.character);
     }
     return text;
 }
@@ -260,7 +262,7 @@ void TerminalEmulator::feedByte(unsigned char ch)
             flushIncompleteUtf8();
             const int target = ((m_cursorCol / 8) + 1) * 8;
             while (m_cursorCol < target) {
-                putCharacter(QChar(' '));
+                putCodepoint(static_cast<char32_t>(' '));
             }
             return;
         }
@@ -282,7 +284,7 @@ void TerminalEmulator::feedByte(unsigned char ch)
         }
         if (ch < 0x80 && activeCharset() == Charset::DecSpecialGraphics) {
             flushIncompleteUtf8();
-            putCharacter(mapDecSpecialGraphicsChar(ch));
+            putCodepoint(static_cast<char32_t>(mapDecSpecialGraphicsChar(ch).unicode()));
             return;
         }
         feedUtf8Byte(ch);
@@ -421,7 +423,7 @@ void TerminalEmulator::feedUtf8Byte(unsigned char ch)
 {
     if (m_utf8ExpectedBytes == 0) {
         if (ch < 0x80) {
-            putCharacter(QChar::fromLatin1(static_cast<char>(ch)));
+            putCodepoint(static_cast<char32_t>(ch));
             return;
         }
         if ((ch & 0xE0) == 0xC0) {
@@ -439,12 +441,12 @@ void TerminalEmulator::feedUtf8Byte(unsigned char ch)
             m_utf8Pending = QByteArray(1, static_cast<char>(ch));
             return;
         }
-        putCharacter(QChar(QChar::ReplacementCharacter));
+        putCodepoint(static_cast<char32_t>(QChar::ReplacementCharacter));
         return;
     }
 
     if ((ch & 0xC0) != 0x80) {
-        putCharacter(QChar(QChar::ReplacementCharacter));
+        putCodepoint(static_cast<char32_t>(QChar::ReplacementCharacter));
         m_utf8Pending.clear();
         m_utf8ExpectedBytes = 0;
         // Re-run through the full state machine so control bytes (e.g. ESC) are not rendered as text.
@@ -462,16 +464,16 @@ void TerminalEmulator::feedUtf8Byte(unsigned char ch)
     m_utf8ExpectedBytes = 0;
 
     if (decoded.isEmpty()) {
-        putCharacter(QChar(QChar::ReplacementCharacter));
+        putCodepoint(static_cast<char32_t>(QChar::ReplacementCharacter));
     } else {
-        for (QChar character : decoded) {
-            const ushort code = character.unicode();
+        const QList<uint> codepoints = decoded.toUcs4();
+        for (uint code : codepoints) {
             if (code >= 0x80 && code <= 0x9f) {
                 // Map UTF-8 encoded C1 controls (e.g. U+009B CSI) back to terminal control bytes.
                 feedByte(static_cast<unsigned char>(code));
                 continue;
             }
-            putCharacter(character);
+            putCodepoint(static_cast<char32_t>(code));
         }
     }
 }
@@ -481,7 +483,7 @@ void TerminalEmulator::flushIncompleteUtf8()
     if (m_utf8ExpectedBytes == 0) {
         return;
     }
-    putCharacter(QChar(QChar::ReplacementCharacter));
+    putCodepoint(static_cast<char32_t>(QChar::ReplacementCharacter));
     m_utf8Pending.clear();
     m_utf8ExpectedBytes = 0;
 }
@@ -588,18 +590,37 @@ QChar TerminalEmulator::mapDecSpecialGraphicsChar(unsigned char ch) const
     }
 }
 
-bool TerminalEmulator::isWideCharacter(QChar ch)
+int TerminalEmulator::codepointDisplayWidth(char32_t codepoint)
 {
-    const ushort u = ch.unicode();
-    return (u >= 0x1100 && u <= 0x115f)
-        || (u >= 0x2329 && u <= 0x232a)
-        || (u >= 0x2e80 && u <= 0xa4cf)
-        || (u >= 0xac00 && u <= 0xd7a3)
-        || (u >= 0xf900 && u <= 0xfaff)
-        || (u >= 0xfe10 && u <= 0xfe19)
-        || (u >= 0xfe30 && u <= 0xfe6f)
-        || (u >= 0xff00 && u <= 0xff60)
-        || (u >= 0xffe0 && u <= 0xffe6);
+    if (codepoint == 0) {
+        return 0;
+    }
+
+    // Combining marks and joiners occupy no cells by themselves.
+    if ((codepoint >= 0x0300 && codepoint <= 0x036f)
+        || (codepoint >= 0x1ab0 && codepoint <= 0x1aff)
+        || (codepoint >= 0x1dc0 && codepoint <= 0x1dff)
+        || (codepoint >= 0x20d0 && codepoint <= 0x20ff)
+        || (codepoint >= 0xfe20 && codepoint <= 0xfe2f)
+        || codepoint == 0x200d) {
+        return 0;
+    }
+
+    if ((codepoint >= 0x1100 && codepoint <= 0x115f)
+        || (codepoint >= 0x2329 && codepoint <= 0x232a)
+        || (codepoint >= 0x2e80 && codepoint <= 0xa4cf)
+        || (codepoint >= 0xac00 && codepoint <= 0xd7a3)
+        || (codepoint >= 0xf900 && codepoint <= 0xfaff)
+        || (codepoint >= 0xfe10 && codepoint <= 0xfe19)
+        || (codepoint >= 0xfe30 && codepoint <= 0xfe6f)
+        || (codepoint >= 0xff00 && codepoint <= 0xff60)
+        || (codepoint >= 0xffe0 && codepoint <= 0xffe6)
+        || (codepoint >= 0x1f300 && codepoint <= 0x1faff)
+        || (codepoint >= 0x20000 && codepoint <= 0x3fffd)) {
+        return 2;
+    }
+
+    return 1;
 }
 
 TerminalEmulator::Charset TerminalEmulator::activeCharset() const
@@ -630,7 +651,7 @@ void TerminalEmulator::handleEscapeIntermediateFinal(unsigned char finalByte)
     }
 }
 
-void TerminalEmulator::putCharacter(QChar ch)
+void TerminalEmulator::putCodepoint(char32_t codepoint)
 {
     if (m_cursorCol >= m_cols) {
         // LF no longer implies CR; explicit autowrap must move to column 0.
@@ -638,14 +659,15 @@ void TerminalEmulator::putCharacter(QChar ch)
         m_cursorCol = 0;
     }
 
-    const int charWidth = isWideCharacter(ch) ? 2 : 1;
+    const int charWidth = std::clamp(codepointDisplayWidth(codepoint), 1, 2);
     if (charWidth == 2 && m_cursorCol == m_cols - 1) {
         newline();
         m_cursorCol = 0;
     }
 
     TerminalCell cell;
-    cell.character = ch;
+    const char32_t scalar = codepoint;
+    cell.character = QString::fromUcs4(&scalar, 1);
     cell.foreground = m_style.foreground;
     cell.background = m_style.background;
     cell.hasForegroundRgb = m_style.hasForegroundRgb;
@@ -674,7 +696,7 @@ void TerminalEmulator::putCharacter(QChar ch)
 TerminalCell TerminalEmulator::makeEraseCell() const
 {
     TerminalCell cell;
-    cell.character = QChar(' ');
+    cell.character = QStringLiteral(" ");
     cell.foreground = m_style.foreground;
     cell.background = m_style.background;
     cell.hasForegroundRgb = m_style.hasForegroundRgb;
