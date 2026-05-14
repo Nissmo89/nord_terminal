@@ -1,0 +1,70 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build qt6-base-dev
+
+      - name: Verify required files exist
+        run: |
+          test -f CMakeLists.txt
+          test -f include/nordterminal/NordTerminal.h
+          test -f include/nordterminal/TerminalSession.h
+          test -f src/terminal/TerminalSession.cpp
+
+      - name: Configure (CMake)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DNORD_TERMINAL_BUILD_EXAMPLES=OFF
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Install smoke test
+        run: cmake --install build --prefix "${{ github.workspace }}/install"
+
+  windows:
+    name: Windows Build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install minimal Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.6.3"
+          host: "windows"
+          target: "desktop"
+          arch: "win64_msvc2022_64"
+          archives: "qtbase"
+
+      - name: Verify required files exist
+        shell: bash
+        run: |
+          test -f CMakeLists.txt
+          test -f include/nordterminal/NordTerminal.h
+          test -f include/nordterminal/TerminalSession.h
+          test -f src/terminal/TerminalSession.cpp
+
+      - name: Configure (CMake)
+        run: cmake -S . -B build -A x64 -DNORD_TERMINAL_BUILD_EXAMPLES=OFF
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
