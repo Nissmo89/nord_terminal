@@ -1,0 +1,32 @@
+{
+  "id": "nord-dark",
+  "name": "Nord Dark",
+  "font": {
+    "family": "JetBrains Mono",
+    "size": 11
+  },
+  "colors": {
+    "background": "#F8F8F2",
+    "foreground": "#272822",
+    "cursor": "#F92672",
+    "selection": "#E6DB74",
+    "ansi": [
+      "#272822",
+      "#D7005F",
+      "#5F8700",
+      "#A77F00",
+      "#0087AF",
+      "#5F00AF",
+      "#008787",
+      "#E8E8DD",
+      "#6C6D5F",
+      "#F92672",
+      "#82B414",
+      "#C9A227",
+      "#00A8C8",
+      "#8B4CFF",
+      "#00AFAF",
+      "#FFFFFF"
+    ]
+  }
+}
