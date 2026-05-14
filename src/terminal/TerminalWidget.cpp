@@ -18,7 +18,6 @@
 #include <QWheelEvent>
 
 #include <algorithm>
-#include <vector>
 
 namespace nord::terminal {
 
@@ -196,9 +195,32 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         return;
     }
 
-    const int startLine = visibleStartLine();
+    const int scrollbackSize = m_scrollback.size();
+    const int totalLineCount = scrollbackSize + rows;
+    const int startLine = std::clamp(totalLineCount - rows - m_scrollOffset, 0, std::max(0, totalLineCount - rows));
     const int firstRow = std::clamp(dirtyRect.top() / std::max(1, m_cellHeight), 0, rows - 1);
     const int lastRow = std::clamp(dirtyRect.bottom() / std::max(1, m_cellHeight), 0, rows - 1);
+
+    bool selectionActive = false;
+    int selectionStartRow = 0;
+    int selectionEndRow = -1;
+    int selectionStartCol = 0;
+    int selectionEndCol = -1;
+    if (m_selection.isActive() && totalLineCount > 0) {
+        const int maxAbsoluteLine = totalLineCount - 1;
+        QPoint start = m_selection.start();
+        QPoint end = m_selection.end();
+        start.setY(std::clamp(start.y(), 0, maxAbsoluteLine));
+        end.setY(std::clamp(end.y(), 0, maxAbsoluteLine));
+        if (start.y() > end.y() || (start.y() == end.y() && start.x() > end.x())) {
+            std::swap(start, end);
+        }
+        selectionStartRow = start.y();
+        selectionEndRow = end.y();
+        selectionStartCol = start.x();
+        selectionEndCol = end.x();
+        selectionActive = selectionStartRow <= selectionEndRow;
+    }
 
     QFont styledFont = m_theme.font;
     bool fontInitialized = false;
@@ -206,27 +228,52 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
     bool lastItalic = false;
     bool lastUnderline = false;
     bool lastStrike = false;
-    std::vector<TerminalCell> rowCells(static_cast<std::size_t>(cols));
+    const QString spaceGlyph = QStringLiteral(" ");
 
     for (int row = firstRow; row <= lastRow; ++row) {
         const int absoluteLine = startLine + row;
         const int y = row * m_cellHeight;
 
-        if (absoluteLine < m_scrollback.size()) {
+        int selectedStartCol = -1;
+        int selectedEndCol = -1;
+        if (selectionActive && absoluteLine >= selectionStartRow && absoluteLine <= selectionEndRow) {
+            if (selectionStartRow == selectionEndRow) {
+                selectedStartCol = selectionStartCol;
+                selectedEndCol = selectionEndCol;
+            } else if (absoluteLine == selectionStartRow) {
+                selectedStartCol = selectionStartCol;
+                selectedEndCol = cols - 1;
+            } else if (absoluteLine == selectionEndRow) {
+                selectedStartCol = 0;
+                selectedEndCol = selectionEndCol;
+            } else {
+                selectedStartCol = 0;
+                selectedEndCol = cols - 1;
+            }
+            selectedStartCol = std::clamp(selectedStartCol, 0, cols - 1);
+            selectedEndCol = std::clamp(selectedEndCol, 0, cols - 1);
+            if (selectedStartCol > selectedEndCol) {
+                selectedStartCol = -1;
+                selectedEndCol = -1;
+            }
+        }
+        const bool rowHasSelection = selectedStartCol >= 0;
+
+        if (absoluteLine < scrollbackSize) {
             const QString &line = m_scrollback.lineAt(absoluteLine);
             const auto codepoints = line.toUcs4();
-            for (int col = 0; col < cols; ++col) {
-                const int x = col * m_cellWidth;
-                const bool selected = cellSelected(absoluteLine, col);
-                const QColor background = selected ? m_theme.selection : m_theme.background;
-                painter.fillRect(x, y, m_cellWidth, m_cellHeight, background);
+
+            if (rowHasSelection) {
+                painter.fillRect(0, y, cols * m_cellWidth, m_cellHeight, m_theme.background);
+                painter.fillRect(selectedStartCol * m_cellWidth, y, (selectedEndCol - selectedStartCol + 1) * m_cellWidth,
+                    m_cellHeight, m_theme.selection);
             }
 
             painter.setPen(m_theme.foreground);
             painter.setFont(m_theme.font);
             for (int col = 0; col < cols; ++col) {
                 const QString glyph = col < codepoints.size() ? scalarFromCodepoint(codepoints[col]) : QString();
-                if (!glyph.isEmpty() && glyph != QStringLiteral(" ")) {
+                if (!glyph.isEmpty() && glyph != spaceGlyph) {
                     const int x = col * m_cellWidth;
                     painter.drawText(x, y + m_ascent, glyph);
                 }
@@ -234,20 +281,20 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
             continue;
         }
 
-        const int emulatorRow = absoluteLine - m_scrollback.size();
-        for (int col = 0; col < cols; ++col) {
-            rowCells[static_cast<std::size_t>(col)] = m_emulator.cellAt(emulatorRow, col);
+        const int emulatorRow = absoluteLine - scrollbackSize;
+        const TerminalCell *rowCells = m_emulator.rowData(emulatorRow);
+        if (!rowCells) {
+            continue;
         }
 
         // Pass 1: paint all cell backgrounds to avoid clipping glyphs by adjacent background fills.
         for (int col = 0; col < cols; ++col) {
             const TerminalCell &cell = rowCells[static_cast<std::size_t>(col)];
             QColor background = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
-            QColor foreground = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
             if (cell.inverse) {
-                std::swap(background, foreground);
+                background = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
             }
-            if (cellSelected(absoluteLine, col)) {
+            if (rowHasSelection && col >= selectedStartCol && col <= selectedEndCol) {
                 background = m_theme.selection;
             }
 
@@ -262,14 +309,13 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
             if (cell.wideContinuation) {
                 continue;
             }
-            if (cell.character.isEmpty() || cell.character == QStringLiteral(" ")) {
+            if (cell.character.isEmpty() || cell.character == spaceGlyph) {
                 continue;
             }
 
             QColor foreground = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
-            QColor background = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
             if (cell.inverse) {
-                std::swap(background, foreground);
+                foreground = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
             }
             if (cell.dim) {
                 foreground.setAlphaF(0.7);
@@ -629,41 +675,6 @@ QString TerminalWidget::selectedText() const
         }
     }
     return text;
-}
-
-bool TerminalWidget::cellSelected(int absoluteRow, int col) const
-{
-    if (!m_selection.isActive()) {
-        return false;
-    }
-
-    const int maxAbsoluteLine = totalLines() - 1;
-    if (maxAbsoluteLine < 0) {
-        return false;
-    }
-
-    QPoint start = m_selection.start();
-    QPoint end = m_selection.end();
-    start.setY(std::clamp(start.y(), 0, maxAbsoluteLine));
-    end.setY(std::clamp(end.y(), 0, maxAbsoluteLine));
-    if (start.y() > end.y() || (start.y() == end.y() && start.x() > end.x())) {
-        std::swap(start, end);
-    }
-
-    if (absoluteRow < start.y() || absoluteRow > end.y()) {
-        return false;
-    }
-
-    if (start.y() == end.y()) {
-        return col >= start.x() && col <= end.x();
-    }
-    if (absoluteRow == start.y()) {
-        return col >= start.x();
-    }
-    if (absoluteRow == end.y()) {
-        return col <= end.x();
-    }
-    return true;
 }
 
 void TerminalWidget::maybeSendMouseReport(QMouseEvent *event, bool release)

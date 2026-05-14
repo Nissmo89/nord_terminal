@@ -48,7 +48,6 @@ private:
     [[nodiscard]] QPoint toAbsoluteCell(const QPoint &pixelPos) const;
     [[nodiscard]] QString lineTextAtAbsolute(int absoluteLine) const;
     [[nodiscard]] QString selectedText() const;
-    [[nodiscard]] bool cellSelected(int absoluteRow, int col) const;
     void maybeSendMouseReport(QMouseEvent *event, bool release);
 
     TerminalTheme m_theme = TerminalTheme::nordDark();

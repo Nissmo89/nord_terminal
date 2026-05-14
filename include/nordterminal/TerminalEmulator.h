@@ -28,7 +28,8 @@ public:
     [[nodiscard]] bool mouseButtonTrackingEnabled() const;
     [[nodiscard]] bool mouseAnyTrackingEnabled() const;
     [[nodiscard]] bool mouseSgrMode() const;
-    [[nodiscard]] TerminalCell cellAt(int row, int col) const;
+    [[nodiscard]] const TerminalCell &cellAt(int row, int col) const;
+    [[nodiscard]] const TerminalCell *rowData(int row) const;
     [[nodiscard]] QString lineText(int row) const;
     std::vector<QString> takeScrolledLines();
     [[nodiscard]] bool takeScrollbackClearRequested();

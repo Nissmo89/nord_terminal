@@ -159,12 +159,21 @@ bool TerminalEmulator::mouseSgrMode() const
     return m_mouseSgrMode;
 }
 
-TerminalCell TerminalEmulator::cellAt(int row, int col) const
+const TerminalCell &TerminalEmulator::cellAt(int row, int col) const
 {
+    static const TerminalCell emptyCell {};
     if (row < 0 || col < 0 || row >= m_rows || col >= m_cols) {
-        return {};
+        return emptyCell;
     }
     return activeCells()[static_cast<std::size_t>(index(row, col))];
+}
+
+const TerminalCell *TerminalEmulator::rowData(int row) const
+{
+    if (row < 0 || row >= m_rows) {
+        return nullptr;
+    }
+    return activeCells().data() + static_cast<std::size_t>(row * m_cols);
 }
 
 QString TerminalEmulator::lineText(int row) const
@@ -176,7 +185,7 @@ QString TerminalEmulator::lineText(int row) const
     QString text;
     text.reserve(m_cols * 2);
     for (int col = 0; col < m_cols; ++col) {
-        const TerminalCell cell = cellAt(row, col);
+        const TerminalCell &cell = cellAt(row, col);
         if (cell.wideContinuation) {
             text.append(QLatin1Char(' '));
             continue;
