@@ -74,7 +74,33 @@ jobs:
           test -f src/terminal/TerminalSession.cpp
 
       - name: Configure (CMake)
-        run: cmake -S . -B build -A x64 -DNORD_TERMINAL_BUILD_EXAMPLES=OFF
+        run: cmake -S . -B build -A x64 -DNORD_TERMINAL_BUILD_EXAMPLES=ON
 
       - name: Build
         run: cmake --build build --config Release --parallel
+
+      - name: Package Windows demo
+        shell: pwsh
+        run: |
+          $exe = Join-Path $pwd "build\Release\nord_terminal_demo.exe"
+          if (-not (Test-Path $exe)) {
+            throw "Expected demo executable was not found at: $exe"
+          }
+
+          $dist = Join-Path $pwd "dist\nord_terminal_demo-windows-x64"
+          New-Item -ItemType Directory -Path $dist -Force | Out-Null
+          Copy-Item $exe (Join-Path $dist "nord_terminal_demo.exe") -Force
+
+          if (Test-Path (Join-Path $pwd "themes")) {
+            Copy-Item (Join-Path $pwd "themes") (Join-Path $dist "themes") -Recurse -Force
+          }
+
+          $windeployqt = (Get-Command windeployqt -ErrorAction Stop).Source
+          & $windeployqt --release --compiler-runtime --no-translations --dir $dist (Join-Path $dist "nord_terminal_demo.exe")
+
+      - name: Upload Windows demo artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: nord_terminal_demo-windows-x64
+          path: dist/nord_terminal_demo-windows-x64/**
+          if-no-files-found: error
