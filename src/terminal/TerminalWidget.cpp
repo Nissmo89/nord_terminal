@@ -7,6 +7,7 @@
 #include <QClipboard>
 #include <QFocusEvent>
 #include <QFont>
+#include <QFontDatabase>
 #include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -17,13 +18,85 @@
 #include <QWheelEvent>
 
 #include <algorithm>
+#include <vector>
 
 namespace nord::terminal {
+
+namespace {
+
+QFont withSymbolFallbacks(const QFont &baseFont)
+{
+    QFont font(baseFont);
+
+    QStringList families = font.families();
+    if (families.isEmpty()) {
+        families << font.family();
+    }
+
+    const QStringList preferredFallbackFamilies = {
+        QStringLiteral("JetBrainsMono Nerd Font"),
+        QStringLiteral("JetBrainsMono Nerd Font Mono"),
+        QStringLiteral("JetBrains Mono Nerd Font"),
+        QStringLiteral("JetBrains Mono Nerd Font Mono"),
+        QStringLiteral("CaskaydiaCove Nerd Font"),
+        QStringLiteral("CaskaydiaCove Nerd Font Mono"),
+        QStringLiteral("FiraCode Nerd Font"),
+        QStringLiteral("FiraCode Nerd Font Mono"),
+        QStringLiteral("MesloLGS Nerd Font"),
+        QStringLiteral("MesloLGS Nerd Font Mono"),
+        QStringLiteral("Hack Nerd Font"),
+        QStringLiteral("Hack Nerd Font Mono"),
+        QStringLiteral("Symbols Nerd Font Mono"),
+        QStringLiteral("Symbols Nerd Font"),
+        QStringLiteral("Noto Sans Symbols2"),
+        QStringLiteral("Noto Color Emoji")
+    };
+
+    const QFontDatabase database;
+    const QStringList availableFamilies = database.families();
+    auto familyAvailable = [&availableFamilies](const QString &family) {
+        return std::any_of(availableFamilies.begin(), availableFamilies.end(), [&family](const QString &candidate) {
+            return QString::compare(candidate, family, Qt::CaseInsensitive) == 0;
+        });
+    };
+
+    for (const QString &family : preferredFallbackFamilies) {
+        if (familyAvailable(family)) {
+            families << family;
+        }
+    }
+
+    const QString fixedFamily = QFontDatabase::systemFont(QFontDatabase::FixedFont).family();
+    if (!fixedFamily.isEmpty()) {
+        families << fixedFamily;
+    }
+
+    QStringList deduplicatedFamilies;
+    for (const QString &family : families) {
+        if (family.isEmpty()) {
+            continue;
+        }
+        const bool duplicate = std::any_of(deduplicatedFamilies.begin(), deduplicatedFamilies.end(), [&family](const QString &existing) {
+            return QString::compare(existing, family, Qt::CaseInsensitive) == 0;
+        });
+        if (!duplicate) {
+            deduplicatedFamilies << family;
+        }
+    }
+    if (!deduplicatedFamilies.isEmpty()) {
+        font.setFamilies(deduplicatedFamilies);
+    }
+    font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
+    return font;
+}
+
+} // namespace
 
 TerminalWidget::TerminalWidget(QWidget *parent)
     : QAbstractScrollArea(parent)
 {
     setFocusPolicy(Qt::StrongFocus);
+    m_theme.font = withSymbolFallbacks(m_theme.font);
     setFont(m_theme.font);
     viewport()->setAutoFillBackground(false);
 
@@ -56,6 +129,7 @@ TerminalWidget::TerminalWidget(QWidget *parent)
 void TerminalWidget::setTheme(const TerminalTheme &theme)
 {
     m_theme = theme;
+    m_theme.font = withSymbolFallbacks(m_theme.font);
     setFont(m_theme.font);
     recalculateGrid();
     viewport()->update();
@@ -126,6 +200,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
     bool lastItalic = false;
     bool lastUnderline = false;
     bool lastStrike = false;
+    std::vector<TerminalCell> rowCells(static_cast<std::size_t>(cols));
 
     for (int row = firstRow; row <= lastRow; ++row) {
         const int absoluteLine = startLine + row;
@@ -138,11 +213,14 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                 const bool selected = cellSelected(absoluteLine, col);
                 const QColor background = selected ? m_theme.selection : m_theme.background;
                 painter.fillRect(x, y, m_cellWidth, m_cellHeight, background);
+            }
 
+            painter.setPen(m_theme.foreground);
+            painter.setFont(m_theme.font);
+            for (int col = 0; col < cols; ++col) {
                 const QChar ch = (col < line.size()) ? line[col] : QChar(' ');
                 if (ch != QChar(' ')) {
-                    painter.setPen(m_theme.foreground);
-                    painter.setFont(m_theme.font);
+                    const int x = col * m_cellWidth;
                     painter.drawText(x, y + m_ascent, QString(ch));
                 }
             }
@@ -151,14 +229,16 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
 
         const int emulatorRow = absoluteLine - m_scrollback.size();
         for (int col = 0; col < cols; ++col) {
-            const TerminalCell cell = m_emulator.cellAt(emulatorRow, col);
+            rowCells[static_cast<std::size_t>(col)] = m_emulator.cellAt(emulatorRow, col);
+        }
+
+        // Pass 1: paint all cell backgrounds to avoid clipping glyphs by adjacent background fills.
+        for (int col = 0; col < cols; ++col) {
+            const TerminalCell &cell = rowCells[static_cast<std::size_t>(col)];
             QColor background = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
             QColor foreground = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
             if (cell.inverse) {
                 std::swap(background, foreground);
-            }
-            if (cell.dim) {
-                foreground.setAlphaF(0.7);
             }
             if (cellSelected(absoluteLine, col)) {
                 background = m_theme.selection;
@@ -167,8 +247,25 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
             const int widthCells = (cell.wide && col + 1 < cols) ? 2 : 1;
             const int x = col * m_cellWidth;
             painter.fillRect(x, y, m_cellWidth * widthCells, m_cellHeight, background);
+        }
+
+        // Pass 2: draw glyphs.
+        for (int col = 0; col < cols; ++col) {
+            const TerminalCell &cell = rowCells[static_cast<std::size_t>(col)];
             if (cell.wideContinuation) {
                 continue;
+            }
+            if (cell.character == QChar(' ')) {
+                continue;
+            }
+
+            QColor foreground = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
+            QColor background = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
+            if (cell.inverse) {
+                std::swap(background, foreground);
+            }
+            if (cell.dim) {
+                foreground.setAlphaF(0.7);
             }
 
             if (!fontInitialized || cell.bold != lastBold || cell.italic != lastItalic
@@ -188,6 +285,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
             }
 
             painter.setPen(foreground);
+            const int x = col * m_cellWidth;
             painter.drawText(x, y + m_ascent, QString(cell.character));
         }
     }
@@ -359,7 +457,9 @@ void TerminalWidget::focusOutEvent(QFocusEvent *event)
 void TerminalWidget::recalculateGrid()
 {
     QFontMetrics metrics(m_theme.font);
-    m_cellWidth = std::max(1, metrics.averageCharWidth());
+    const int advanceM = metrics.horizontalAdvance(QStringLiteral("M"));
+    const int advanceW = metrics.horizontalAdvance(QStringLiteral("W"));
+    m_cellWidth = std::max({1, metrics.averageCharWidth(), advanceM, advanceW});
     m_cellHeight = std::max(1, metrics.height());
     m_ascent = metrics.ascent();
 
