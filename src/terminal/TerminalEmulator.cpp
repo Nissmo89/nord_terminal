@@ -214,6 +214,10 @@ void TerminalEmulator::feedByte(unsigned char ch)
             m_parserState = ParserState::Osc;
             return;
         }
+        if (ch == 0x9c) { // 8-bit ST outside OSC/DCS: ignore
+            flushIncompleteUtf8();
+            return;
+        }
         if (ch == 0x1b) {
             flushIncompleteUtf8();
             m_parserState = ParserState::Escape;
@@ -259,6 +263,11 @@ void TerminalEmulator::feedByte(unsigned char ch)
             if (QApplication::instance()) {
                 QApplication::beep();
             }
+            return;
+        }
+        if (ch >= 0x80 && ch <= 0x9f) {
+            // Other C1 controls are currently unsupported; do not render placeholders for them.
+            flushIncompleteUtf8();
             return;
         }
         if (ch < 0x20 || ch == 0x7f) {
@@ -442,15 +451,22 @@ void TerminalEmulator::feedUtf8Byte(unsigned char ch)
     }
 
     const QString decoded = QString::fromUtf8(m_utf8Pending.constData(), m_utf8Pending.size());
+    m_utf8Pending.clear();
+    m_utf8ExpectedBytes = 0;
+
     if (decoded.isEmpty()) {
         putCharacter(QChar(QChar::ReplacementCharacter));
     } else {
         for (QChar character : decoded) {
+            const ushort code = character.unicode();
+            if (code >= 0x80 && code <= 0x9f) {
+                // Map UTF-8 encoded C1 controls (e.g. U+009B CSI) back to terminal control bytes.
+                feedByte(static_cast<unsigned char>(code));
+                continue;
+            }
             putCharacter(character);
         }
     }
-    m_utf8Pending.clear();
-    m_utf8ExpectedBytes = 0;
 }
 
 void TerminalEmulator::flushIncompleteUtf8()
