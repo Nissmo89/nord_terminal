@@ -441,7 +441,8 @@ void TerminalEmulator::feedUtf8Byte(unsigned char ch)
         putCharacter(QChar(QChar::ReplacementCharacter));
         m_utf8Pending.clear();
         m_utf8ExpectedBytes = 0;
-        feedUtf8Byte(ch);
+        // Re-run through the full state machine so control bytes (e.g. ESC) are not rendered as text.
+        feedByte(ch);
         return;
     }
 
