@@ -202,6 +202,12 @@ void TerminalEmulator::feedByte(unsigned char ch)
 {
     switch (m_parserState) {
     case ParserState::Ground:
+        if (m_utf8ExpectedBytes > 0) {
+            // A multibyte UTF-8 sequence is in progress; continuation bytes can be 0x80..0xBF.
+            // Decode them before interpreting bytes as terminal controls.
+            feedUtf8Byte(ch);
+            return;
+        }
         if (ch == 0x9b) { // 8-bit CSI
             flushIncompleteUtf8();
             m_csiParams.clear();
