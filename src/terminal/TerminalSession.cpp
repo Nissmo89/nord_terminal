@@ -752,19 +752,27 @@ void TerminalSession::onMasterPtyReadyRead()
 
     char buffer[8192];
     constexpr int maxChunksPerActivation = 64;
+    QByteArray batchedOutput;
+    batchedOutput.reserve(static_cast<qsizetype>(sizeof(buffer)) * 4);
     int chunksRead = 0;
     for (;;) {
         const ssize_t n = ::read(m_masterFd, buffer, sizeof(buffer));
         if (n > 0) {
-            emit outputReceived(QByteArray(buffer, static_cast<int>(n)));
+            batchedOutput.append(buffer, static_cast<qsizetype>(n));
             ++chunksRead;
             if (chunksRead >= maxChunksPerActivation) {
                 // Yield back to the Qt event loop to prevent UI starvation under heavy TUI redraws.
+                if (!batchedOutput.isEmpty()) {
+                    emit outputReceived(batchedOutput);
+                }
                 return;
             }
             continue;
         }
         if (n == 0) {
+            if (!batchedOutput.isEmpty()) {
+                emit outputReceived(batchedOutput);
+            }
             closeMasterPty();
             return;
         }
@@ -772,7 +780,13 @@ void TerminalSession::onMasterPtyReadyRead()
             continue;
         }
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            if (!batchedOutput.isEmpty()) {
+                emit outputReceived(batchedOutput);
+            }
             return;
+        }
+        if (!batchedOutput.isEmpty()) {
+            emit outputReceived(batchedOutput);
         }
         emit sessionError(QStringLiteral("PTY read failed: %1").arg(QString::fromLocal8Bit(std::strerror(errno))));
         return;

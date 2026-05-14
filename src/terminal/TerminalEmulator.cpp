@@ -81,6 +81,8 @@ void TerminalEmulator::reset()
     m_mouseTrackingMode = MouseTrackingMode::Disabled;
     m_mouseSgrMode = false;
     m_synchronizedOutputMode = false;
+    m_autoWrapMode = true;
+    m_insertMode = false;
     m_inAltBuffer = false;
     resetScrollRegion();
     m_parserState = ParserState::Ground;
@@ -691,15 +693,24 @@ void TerminalEmulator::handleEscapeIntermediateFinal(unsigned char finalByte)
 void TerminalEmulator::putCodepoint(char32_t codepoint)
 {
     if (m_cursorCol >= m_cols) {
-        // LF no longer implies CR; explicit autowrap must move to column 0.
-        newline();
-        m_cursorCol = 0;
+        if (m_autoWrapMode) {
+            // LF no longer implies CR; explicit autowrap must move to column 0.
+            newline();
+            m_cursorCol = 0;
+        } else {
+            m_cursorCol = std::max(0, m_cols - 1);
+        }
     }
 
-    const int charWidth = std::clamp(codepointDisplayWidth(codepoint), 1, 2);
+    int charWidth = std::clamp(codepointDisplayWidth(codepoint), 1, 2);
     if (charWidth == 2 && m_cursorCol == m_cols - 1) {
-        newline();
-        m_cursorCol = 0;
+        if (m_autoWrapMode) {
+            newline();
+            m_cursorCol = 0;
+        } else {
+            codepoint = static_cast<char32_t>(' ');
+            charWidth = 1;
+        }
     }
 
     TerminalCell cell;
@@ -721,6 +732,17 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
     cell.wideContinuation = false;
 
     auto &cells = activeCells();
+    if (m_insertMode) {
+        const int shift = std::clamp(charWidth, 1, m_cols - m_cursorCol);
+        for (int col = m_cols - 1; col >= m_cursorCol + shift; --col) {
+            cells[static_cast<std::size_t>(index(m_cursorRow, col))] = cells[static_cast<std::size_t>(index(m_cursorRow, col - shift))];
+        }
+        const TerminalCell eraseCell = makeEraseCell();
+        for (int col = m_cursorCol; col < m_cursorCol + shift && col < m_cols; ++col) {
+            cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
+        }
+    }
+
     cells[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol))] = cell;
     if (charWidth == 2 && m_cursorCol + 1 < m_cols) {
         TerminalCell continuation = makeEraseCell();
@@ -728,7 +750,11 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
         cells[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol + 1))] = continuation;
     }
     markDirtyRow(m_cursorRow);
-    m_cursorCol += charWidth;
+    if (m_autoWrapMode) {
+        m_cursorCol += charWidth;
+    } else {
+        m_cursorCol = std::min(m_cols - 1, m_cursorCol + charWidth);
+    }
 }
 
 TerminalCell TerminalEmulator::makeEraseCell() const
@@ -1018,6 +1044,84 @@ void TerminalEmulator::eraseInLine(int mode)
     clearLine(m_cursorRow, m_cursorCol, m_cols - 1);
 }
 
+void TerminalEmulator::insertBlankChars(int count)
+{
+    if (count <= 0 || m_cursorRow < 0 || m_cursorRow >= m_rows || m_cursorCol >= m_cols) {
+        return;
+    }
+    const int n = std::clamp(count, 1, m_cols - m_cursorCol);
+    auto &cells = activeCells();
+    for (int col = m_cols - 1; col >= m_cursorCol + n; --col) {
+        cells[static_cast<std::size_t>(index(m_cursorRow, col))] = cells[static_cast<std::size_t>(index(m_cursorRow, col - n))];
+    }
+    const TerminalCell eraseCell = makeEraseCell();
+    for (int col = m_cursorCol; col < m_cursorCol + n; ++col) {
+        cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
+    }
+    markDirtyRow(m_cursorRow);
+}
+
+void TerminalEmulator::deleteChars(int count)
+{
+    if (count <= 0 || m_cursorRow < 0 || m_cursorRow >= m_rows || m_cursorCol >= m_cols) {
+        return;
+    }
+    const int n = std::clamp(count, 1, m_cols - m_cursorCol);
+    auto &cells = activeCells();
+    for (int col = m_cursorCol; col + n < m_cols; ++col) {
+        cells[static_cast<std::size_t>(index(m_cursorRow, col))] = cells[static_cast<std::size_t>(index(m_cursorRow, col + n))];
+    }
+    const TerminalCell eraseCell = makeEraseCell();
+    for (int col = m_cols - n; col < m_cols; ++col) {
+        cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
+    }
+    markDirtyRow(m_cursorRow);
+}
+
+void TerminalEmulator::eraseChars(int count)
+{
+    if (count <= 0 || m_cursorRow < 0 || m_cursorRow >= m_rows || m_cursorCol >= m_cols) {
+        return;
+    }
+    const int n = std::clamp(count, 1, m_cols - m_cursorCol);
+    const TerminalCell eraseCell = makeEraseCell();
+    auto &cells = activeCells();
+    for (int col = m_cursorCol; col < m_cursorCol + n; ++col) {
+        cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
+    }
+    markDirtyRow(m_cursorRow);
+}
+
+void TerminalEmulator::insertLines(int count)
+{
+    if (count <= 0) {
+        return;
+    }
+    if (m_cursorRow < m_scrollTop || m_cursorRow > m_scrollBottom) {
+        return;
+    }
+
+    const int n = std::clamp(count, 1, m_scrollBottom - m_cursorRow + 1);
+    for (int i = 0; i < n; ++i) {
+        scrollDown(m_cursorRow, m_scrollBottom);
+    }
+}
+
+void TerminalEmulator::deleteLines(int count)
+{
+    if (count <= 0) {
+        return;
+    }
+    if (m_cursorRow < m_scrollTop || m_cursorRow > m_scrollBottom) {
+        return;
+    }
+
+    const int n = std::clamp(count, 1, m_scrollBottom - m_cursorRow + 1);
+    for (int i = 0; i < n; ++i) {
+        scrollUp(m_cursorRow, m_scrollBottom);
+    }
+}
+
 bool TerminalEmulator::tryHandleDecrqm(char prefix, char finalChar, const QByteArray &params)
 {
     if (prefix != '?' || finalChar != 'p' || params.isEmpty() || params.back() != '$') {
@@ -1034,6 +1138,9 @@ bool TerminalEmulator::tryHandleDecrqm(char prefix, char finalChar, const QByteA
         switch (mode) {
         case 1:
             state = m_applicationCursorKeys ? 1 : 2;
+            break;
+        case 7:
+            state = m_autoWrapMode ? 1 : 2;
             break;
         case 25:
             state = m_cursorVisible ? 1 : 2;
@@ -1092,6 +1199,19 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         return;
     }
 
+    if (prefix == '\0' && (finalChar == 'h' || finalChar == 'l')) {
+        const bool enabled = finalChar == 'h';
+        if (parsed.empty()) {
+            return;
+        }
+        for (int mode : parsed) {
+            if (mode == 4) {
+                m_insertMode = enabled;
+            }
+        }
+        return;
+    }
+
     if (tryHandleDecrqm(prefix, finalChar, params)) {
         return;
     }
@@ -1130,6 +1250,31 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         return;
     case 'K':
         eraseInLine(effectiveParam(parsed, 0, 0));
+        return;
+    case 'L':
+        insertLines(effectiveParam(parsed, 0, 1));
+        return;
+    case 'M':
+        deleteLines(effectiveParam(parsed, 0, 1));
+        return;
+    case '@':
+        insertBlankChars(effectiveParam(parsed, 0, 1));
+        return;
+    case 'P':
+        deleteChars(effectiveParam(parsed, 0, 1));
+        return;
+    case 'X':
+        eraseChars(effectiveParam(parsed, 0, 1));
+        return;
+    case 'S':
+        for (int i = 0; i < effectiveParam(parsed, 0, 1); ++i) {
+            scrollUp(m_scrollTop, m_scrollBottom);
+        }
+        return;
+    case 'T':
+        for (int i = 0; i < effectiveParam(parsed, 0, 1); ++i) {
+            scrollDown(m_scrollTop, m_scrollBottom);
+        }
         return;
     case 'm':
         applySgr(parsed.empty() ? std::vector<int>{0} : parsed);
@@ -1234,6 +1379,11 @@ void TerminalEmulator::setPrivateMode(int mode, bool enabled)
             markDirtyRow(m_cursorRow);
         }
         m_cursorVisible = enabled;
+        return;
+    }
+
+    if (mode == 7) {
+        m_autoWrapMode = enabled;
         return;
     }
 

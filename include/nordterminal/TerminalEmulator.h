@@ -91,6 +91,11 @@ private:
     void clearLine(int row, int startCol, int endCol);
     void eraseInDisplay(int mode);
     void eraseInLine(int mode);
+    void insertBlankChars(int count);
+    void deleteChars(int count);
+    void eraseChars(int count);
+    void insertLines(int count);
+    void deleteLines(int count);
     bool tryHandleDecrqm(char prefix, char finalChar, const QByteArray &params);
     void handleCsi(char finalChar, QByteArray params);
     void handleOsc(const QByteArray &data);
@@ -122,6 +127,8 @@ private:
     MouseTrackingMode m_mouseTrackingMode = MouseTrackingMode::Disabled;
     bool m_mouseSgrMode = false;
     bool m_synchronizedOutputMode = false;
+    bool m_autoWrapMode = true;
+    bool m_insertMode = false;
     bool m_inAltBuffer = false;
     int m_scrollTop = 0;
     int m_scrollBottom = 23;

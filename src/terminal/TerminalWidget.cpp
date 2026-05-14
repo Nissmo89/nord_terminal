@@ -596,7 +596,8 @@ void TerminalWidget::consumeSessionOutput(const QByteArray &data)
     }
 
     m_outputFlushQueued = true;
-    QTimer::singleShot(0, this, [this]() {
+    const int flushDelayMs = m_pendingSessionOutput.size() >= 16 * 1024 ? 4 : 0;
+    QTimer::singleShot(flushDelayMs, this, [this]() {
         m_outputFlushQueued = false;
         flushPendingSessionOutput();
     });
@@ -686,7 +687,8 @@ void TerminalWidget::flushPendingSessionOutput()
 
     if (!m_pendingSessionOutput.isEmpty() && !m_outputFlushQueued) {
         m_outputFlushQueued = true;
-        QTimer::singleShot(0, this, [this]() {
+        const int flushDelayMs = m_pendingSessionOutput.size() >= 16 * 1024 ? 4 : 0;
+        QTimer::singleShot(flushDelayMs, this, [this]() {
             m_outputFlushQueued = false;
             flushPendingSessionOutput();
         });
