@@ -81,6 +81,8 @@ bool TerminalWidget::startShell(const TerminalProfile &profile)
     m_selection.clear();
     m_emulator.reset();
     m_scrollback = TerminalScrollback(m_scrollback.maxLines());
+    m_pendingSessionOutput.clear();
+    m_outputFlushQueued = false;
     verticalScrollBar()->setRange(0, 0);
     verticalScrollBar()->setValue(0);
     m_scrollOffset = 0;
@@ -349,8 +351,38 @@ void TerminalWidget::recalculateGrid()
 
 void TerminalWidget::consumeSessionOutput(const QByteArray &data)
 {
+    if (data.isEmpty()) {
+        return;
+    }
+
+    m_pendingSessionOutput.append(data);
+    constexpr qsizetype immediateFlushThreshold = 256 * 1024;
+    if (m_pendingSessionOutput.size() >= immediateFlushThreshold) {
+        flushPendingSessionOutput();
+        return;
+    }
+    if (m_outputFlushQueued) {
+        return;
+    }
+
+    m_outputFlushQueued = true;
+    QTimer::singleShot(0, this, [this]() {
+        m_outputFlushQueued = false;
+        flushPendingSessionOutput();
+    });
+}
+
+void TerminalWidget::flushPendingSessionOutput()
+{
+    if (m_pendingSessionOutput.isEmpty()) {
+        return;
+    }
+
     const bool stickToBottom = (verticalScrollBar()->value() == verticalScrollBar()->maximum());
-    m_emulator.feedOutput(data);
+    QByteArray chunk = std::move(m_pendingSessionOutput);
+    m_pendingSessionOutput.clear();
+
+    m_emulator.feedOutput(chunk);
 
     if (m_emulator.takeScrollbackClearRequested()) {
         m_scrollback = TerminalScrollback(m_scrollback.maxLines());
@@ -372,6 +404,14 @@ void TerminalWidget::consumeSessionOutput(const QByteArray &data)
 
     resetCursorBlink();
     viewport()->update();
+
+    if (!m_pendingSessionOutput.isEmpty() && !m_outputFlushQueued) {
+        m_outputFlushQueued = true;
+        QTimer::singleShot(0, this, [this]() {
+            m_outputFlushQueued = false;
+            flushPendingSessionOutput();
+        });
+    }
 }
 
 void TerminalWidget::resetCursorBlink()

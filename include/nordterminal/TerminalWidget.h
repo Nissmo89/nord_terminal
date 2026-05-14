@@ -39,6 +39,7 @@ protected:
 private:
     void recalculateGrid();
     void consumeSessionOutput(const QByteArray &data);
+    void flushPendingSessionOutput();
     void resetCursorBlink();
     [[nodiscard]] int visibleStartLine() const;
     [[nodiscard]] int totalLines() const;
@@ -62,6 +63,8 @@ private:
     int m_wheelRemainder = 0;
     QTimer m_cursorBlinkTimer;
     bool m_cursorBlinkVisible = true;
+    QByteArray m_pendingSessionOutput;
+    bool m_outputFlushQueued = false;
 };
 
 } // namespace nord::terminal

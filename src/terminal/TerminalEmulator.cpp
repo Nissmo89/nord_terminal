@@ -610,12 +610,15 @@ void TerminalEmulator::handleEscapeIntermediateFinal(unsigned char finalByte)
 void TerminalEmulator::putCharacter(QChar ch)
 {
     if (m_cursorCol >= m_cols) {
+        // LF no longer implies CR; explicit autowrap must move to column 0.
         newline();
+        m_cursorCol = 0;
     }
 
     const int charWidth = isWideCharacter(ch) ? 2 : 1;
     if (charWidth == 2 && m_cursorCol == m_cols - 1) {
         newline();
+        m_cursorCol = 0;
     }
 
     TerminalCell cell;
