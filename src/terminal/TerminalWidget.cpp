@@ -256,6 +256,13 @@ void TerminalWidget::resizeEvent(QResizeEvent *event)
     recalculateGrid();
 }
 
+bool TerminalWidget::focusNextPrevChild(bool next)
+{
+    Q_UNUSED(next);
+    // Keep Tab/Backtab inside the terminal so it reaches the PTY (autocomplete, etc.).
+    return false;
+}
+
 void TerminalWidget::mousePressEvent(QMouseEvent *event)
 {
     setFocus();
