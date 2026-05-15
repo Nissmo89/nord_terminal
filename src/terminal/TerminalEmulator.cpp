@@ -316,6 +316,11 @@ void TerminalEmulator::feedByte(unsigned char ch)
             newline();
             return;
         }
+        if (ch == '\v') {
+            flushIncompleteUtf8();
+            newline();
+            return;
+        }
         if (ch == '\r') {
             flushIncompleteUtf8();
             m_cursorCol = 0;
@@ -1295,6 +1300,12 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         params.remove(0, 1);
     }
 
+    // DECSTR (Soft Terminal Reset)
+    if (prefix == '\0' && finalChar == 'p' && params == QByteArray("!")) {
+        softReset();
+        return;
+    }
+
     const std::vector<int> parsed = parseCsiParameters(params);
 
     if (prefix == '?' && (finalChar == 'h' || finalChar == 'l')) {
@@ -1447,6 +1458,24 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
     default:
         return;
     }
+}
+
+void TerminalEmulator::softReset()
+{
+    m_cursorVisible = true;
+    m_applicationCursorKeys = false;
+    m_insertMode = false;
+    resetScrollRegion();
+    m_charsetG0 = Charset::Ascii;
+    m_charsetG1 = Charset::Ascii;
+    m_useG1 = false;
+    m_style = {};
+    m_savedCursorRowMain = 0;
+    m_savedCursorColMain = 0;
+    m_savedCursorRowAlt = 0;
+    m_savedCursorColAlt = 0;
+    moveCursor(0, 0);
+    markDirtyAll();
 }
 
 void TerminalEmulator::handleOsc(const QByteArray &data)

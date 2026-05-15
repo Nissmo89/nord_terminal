@@ -825,8 +825,14 @@ void TerminalWidget::flushPendingSessionOutput()
     bool updatedRegion = false;
     if (hasDirtyRows && m_cellHeight > 0 && m_cellWidth > 0) {
         const int dirtyRowCount = dirtyBottomRow - dirtyTopRow + 1;
-        if (stickToBottom && m_scrollOffset == 0 && viewportScrollLines != 0 && viewportScrollLines > -m_emulator.rows()
-            && viewportScrollLines < m_emulator.rows() && dirtyRowCount < m_emulator.rows()) {
+#if defined(Q_OS_WIN)
+        constexpr bool allowViewportScrollOptimization = false;
+#else
+        constexpr bool allowViewportScrollOptimization = true;
+#endif
+        if (allowViewportScrollOptimization && stickToBottom && m_scrollOffset == 0 && viewportScrollLines != 0
+            && viewportScrollLines > -m_emulator.rows() && viewportScrollLines < m_emulator.rows()
+            && dirtyRowCount < m_emulator.rows()) {
             viewport()->scroll(0, viewportScrollLines * m_cellHeight);
         }
 
@@ -841,9 +847,15 @@ void TerminalWidget::flushPendingSessionOutput()
             updatedRegion = true;
         }
     }
+#if defined(Q_OS_WIN)
+    if (!updatedRegion) {
+        viewport()->update();
+    }
+#else
     if (!updatedRegion && !hasDirtyRows) {
         viewport()->update();
     }
+#endif
 
     if (!m_pendingSessionOutput.isEmpty() && !m_outputFlushQueued) {
         m_outputFlushQueued = true;

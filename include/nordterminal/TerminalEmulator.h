@@ -105,6 +105,7 @@ private:
     bool tryHandleDecrqm(char prefix, char finalChar, const QByteArray &params);
     void handleCsi(char finalChar, QByteArray params);
     void handleOsc(const QByteArray &data);
+    void softReset();
     void setPrivateMode(int mode, bool enabled);
     void resetScrollRegion();
     void setScrollRegion(int top, int bottom);
