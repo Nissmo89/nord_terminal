@@ -851,10 +851,6 @@ void TerminalWidget::flushPendingSessionOutput()
         viewport()->update();
         return;
     }
-        hasDirtyRows = true;
-        dirtyTopRow = 0;
-        dirtyBottomRow = std::max(0, m_emulator.rows() - 1);
-    }
 
     resetCursorBlink();
 
