@@ -1114,24 +1114,18 @@ void TerminalEmulator::eraseInDisplay(int mode)
     if (mode == 2 || mode == 3) {
         const TerminalCell eraseCell = makeEraseCell();
         std::fill(activeCells().begin(), activeCells().end(), eraseCell);
-        
-        // Reset cursor to home position after clear (standard VT behavior)
         m_cursorRow = 0;
         m_cursorCol = 0;
-        
         markDirtyAll();
-        
-        // CRITICAL: Reset viewport scroll state to prevent desync
         m_pendingViewportScrollLines = 0;
-        
-        // Clear any scrolled lines from this batch to prevent repopulation
+        // Drop lines that scrolled up in this same output batch so they don't
+        // repopulate scrollback after the clear.
         m_scrolledLines.clear();
-        
-        // On Windows, ED2 (clear screen) should also clear scrollback to prevent
-        // renderer desync issues with ConPTY batching. ED3 explicitly clears scrollback.
-        // This matches Windows Terminal and other modern terminal behavior.
-        m_scrollbackClearRequested = true;
-        
+        // ED3 explicitly clears scrollback. ED2 only clears the visible screen.
+        // The `clear` command sends ESC[H ESC[2J ESC[3J — ED3 handles scrollback.
+        if (mode == 3) {
+            m_scrollbackClearRequested = true;
+        }
         return;
     }
 

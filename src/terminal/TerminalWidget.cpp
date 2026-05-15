@@ -184,6 +184,8 @@ TerminalWidget::TerminalWidget(QWidget *parent)
         consumeSessionOutput(message.toUtf8() + QByteArray("\r\n"));
     });
     connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int value) {
+        // m_scrollOffset = 0 means viewing the live bottom of the terminal.
+        // maximum() - value gives how many lines above the bottom we are scrolled.
         m_scrollOffset = verticalScrollBar()->maximum() - value;
         viewport()->update();
     });
@@ -819,10 +821,13 @@ void TerminalWidget::recalculateGrid()
     m_emulator.resize(rows, cols);
     m_session.resizePty(rows, cols);
 
-    verticalScrollBar()->setPageStep(rows);
-    verticalScrollBar()->setRange(0, std::max(0, m_scrollback.size()));
-    if (verticalScrollBar()->value() == verticalScrollBar()->maximum()) {
-        m_scrollOffset = 0;
+    {
+        const QSignalBlocker blocker(verticalScrollBar());
+        verticalScrollBar()->setPageStep(rows);
+        verticalScrollBar()->setRange(0, std::max(0, m_scrollback.size()));
+        // Recompute value from m_scrollOffset so the scrollbar stays consistent.
+        const int newMax = verticalScrollBar()->maximum();
+        verticalScrollBar()->setValue(newMax - m_scrollOffset);
     }
     viewport()->update();
 }
@@ -889,124 +894,125 @@ void TerminalWidget::flushPendingSessionOutput()
         return;
     }
 
-    const bool stickToBottom = (verticalScrollBar()->value() == verticalScrollBar()->maximum());
-    const QPoint oldCursor = m_emulator.cursorPosition();
-    const bool oldCursorVisible = m_emulator.cursorVisible();
-    
+    const bool stickToBottom = (m_scrollOffset == 0);
+
     QByteArray chunk = std::move(m_pendingSessionOutput);
     m_pendingSessionOutput.clear();
 
-    // Feed output to emulator
+    const QPoint oldCursor = m_emulator.cursorPosition();
+    const bool oldCursorVisible = m_emulator.cursorVisible();
+
     m_emulator.feedOutput(chunk);
-    
-    // Check if scrollback clear was requested FIRST
-    const bool scrollbackCleared = m_emulator.takeScrollbackClearRequested();
-    
-    // If scrollback was cleared, discard any scrolled lines and reset everything
-    if (scrollbackCleared) {
-        m_emulator.takeScrolledLines(); // Discard
-        m_scrollback = TerminalScrollback(m_scrollback.maxLines());
-        m_selection.clear();
-        m_scrollOffset = 0;
-        
-        // Reset scrollbar
-        verticalScrollBar()->setRange(0, 0);
-        verticalScrollBar()->setValue(0);
-        
-        // Force complete repaint
-        resetCursorBlink();
-        viewport()->update();
-        return;
-    }
-    
-    // Normal path: process scrolled lines
-    for (TerminalEmulator::Line line : m_emulator.takeScrolledLines()) {
-        m_scrollback.pushLine(std::move(line));
-    }
-    
-    // Get dirty region and viewport scroll info
-    int dirtyTopRow = 0;
+
+    // Drain ALL emulator state before touching widget state.
+    const bool scrollbackCleared  = m_emulator.takeScrollbackClearRequested();
+    std::vector<TerminalEmulator::Line> newScrolledLines = m_emulator.takeScrolledLines();
+    int dirtyTopRow    = 0;
     int dirtyBottomRow = -1;
-    bool hasDirtyRows = m_emulator.takeDirtyRowSpan(dirtyTopRow, dirtyBottomRow);
-    const int viewportScrollLines = m_emulator.takePendingViewportScrollLines();
-    const QPoint newCursor = m_emulator.cursorPosition();
-    const bool newCursorVisible = m_emulator.cursorVisible();
+    const bool hasDirtyFromEmulator = m_emulator.takeDirtyRowSpan(dirtyTopRow, dirtyBottomRow);
+    const int  viewportScrollLines  = m_emulator.takePendingViewportScrollLines();
+    const QByteArray terminalReply  = m_emulator.takePendingResponse();
+    const QPoint newCursor          = m_emulator.cursorPosition();
+    const bool newCursorVisible     = m_emulator.cursorVisible();
 
-    // Include cursor rows in dirty region
-    auto includeDirtyRow = [&hasDirtyRows, &dirtyTopRow, &dirtyBottomRow, this](int row) {
-        const int clampedRow = std::clamp(row, 0, std::max(0, m_emulator.rows() - 1));
-        if (!hasDirtyRows) {
-            hasDirtyRows = true;
-            dirtyTopRow = clampedRow;
-            dirtyBottomRow = clampedRow;
-            return;
-        }
-        dirtyTopRow = std::min(dirtyTopRow, clampedRow);
-        dirtyBottomRow = std::max(dirtyBottomRow, clampedRow);
-    };
-
-    if (oldCursorVisible) {
-        includeDirtyRow(oldCursor.y());
-    }
-    if (newCursorVisible) {
-        includeDirtyRow(newCursor.y());
-    }
-
-    // Send any terminal replies
-    const QByteArray terminalReply = m_emulator.takePendingResponse();
     if (!terminalReply.isEmpty()) {
         m_session.writeInput(terminalReply);
     }
 
-    // Update scrollbar
-    verticalScrollBar()->setRange(0, std::max(0, m_scrollback.size()));
-    if (stickToBottom) {
-        verticalScrollBar()->setValue(verticalScrollBar()->maximum());
+    // ── CLEAR PATH ────────────────────────────────────────────────────────────
+    if (scrollbackCleared) {
+        // Discard any lines that scrolled up before the clear in this same batch.
+        newScrolledLines.clear();
+
+        m_scrollback = TerminalScrollback(m_scrollback.maxLines());
+        m_selection.clear();
+        m_scrollOffset = 0;
+
+        // Block the scrollbar signal so it doesn't re-enter and corrupt state.
+        const QSignalBlocker blocker(verticalScrollBar());
+        verticalScrollBar()->setRange(0, 0);
+        verticalScrollBar()->setValue(0);
+
+        resetCursorBlink();
+        // Full repaint — no partial update, no scroll() call.
+        viewport()->update();
+        return;
+    }
+
+    // ── NORMAL PATH ───────────────────────────────────────────────────────────
+    for (TerminalEmulator::Line &line : newScrolledLines) {
+        m_scrollback.pushLine(std::move(line));
+    }
+
+    // Expand dirty region to include cursor rows.
+    bool hasDirtyRows  = hasDirtyFromEmulator;
+    auto includeDirty  = [&](int row) {
+        const int r = std::clamp(row, 0, std::max(0, m_emulator.rows() - 1));
+        if (!hasDirtyRows) { hasDirtyRows = true; dirtyTopRow = r; dirtyBottomRow = r; return; }
+        dirtyTopRow    = std::min(dirtyTopRow,    r);
+        dirtyBottomRow = std::max(dirtyBottomRow, r);
+    };
+    if (oldCursorVisible) includeDirty(oldCursor.y());
+    if (newCursorVisible) includeDirty(newCursor.y());
+
+    // Update scrollbar (block signal to avoid re-entrant m_scrollOffset mutation).
+    {
+        const QSignalBlocker blocker(verticalScrollBar());
+        verticalScrollBar()->setRange(0, std::max(0, m_scrollback.size()));
+        if (stickToBottom) {
+            verticalScrollBar()->setValue(verticalScrollBar()->maximum());
+            m_scrollOffset = 0;
+        }
     }
 
     resetCursorBlink();
 
-    // Repaint dirty region
-    bool updatedRegion = false;
-    if (hasDirtyRows && m_cellHeight > 0 && m_cellWidth > 0) {
-        const int dirtyRowCount = dirtyBottomRow - dirtyTopRow + 1;
-        const bool isFullScreenDirty = (dirtyRowCount >= m_emulator.rows());
-        
-#if defined(Q_OS_WIN)
-        // On Windows, disable viewport scroll optimization for large dirty regions
-        // to prevent rendering artifacts with ConPTY batching
-        const bool allowViewportScrollOptimization = !isFullScreenDirty && (dirtyRowCount < m_emulator.rows() / 2);
-#else
-        constexpr bool allowViewportScrollOptimization = true;
-#endif
-        
-        if (allowViewportScrollOptimization && stickToBottom && m_scrollOffset == 0 && viewportScrollLines != 0
-            && viewportScrollLines > -m_emulator.rows() && viewportScrollLines < m_emulator.rows()) {
-            viewport()->scroll(0, viewportScrollLines * m_cellHeight);
-        }
-
-        const int startLine = visibleStartLine();
-        const int scrollbackSize = m_scrollback.size();
-        const int firstVisibleRow = std::max(0, scrollbackSize + dirtyTopRow - startLine);
-        const int lastVisibleRow = std::min(m_emulator.rows() - 1, scrollbackSize + dirtyBottomRow - startLine);
-        
-        if (firstVisibleRow <= lastVisibleRow) {
-            const QRect dirtyRect(0, firstVisibleRow * m_cellHeight, viewport()->width(),
-                (lastVisibleRow - firstVisibleRow + 1) * m_cellHeight);
-            viewport()->update(dirtyRect);
-            updatedRegion = true;
-        }
+    if (!hasDirtyRows || m_cellHeight <= 0 || m_cellWidth <= 0) {
+        viewport()->update();
+        return;
     }
-    
-    if (!updatedRegion) {
+
+    const int dirtyRowCount   = dirtyBottomRow - dirtyTopRow + 1;
+    const bool fullScreenDirty = (dirtyRowCount >= m_emulator.rows());
+
+    // Never use viewport()->scroll() on Windows — ConPTY output is already
+    // composited; calling scroll() just smears stale pixels around.
+#if !defined(Q_OS_WIN)
+    if (!fullScreenDirty && stickToBottom && m_scrollOffset == 0
+        && viewportScrollLines != 0
+        && viewportScrollLines > -m_emulator.rows()
+        && viewportScrollLines < m_emulator.rows()) {
+        viewport()->scroll(0, viewportScrollLines * m_cellHeight);
+    }
+#else
+    Q_UNUSED(viewportScrollLines);
+#endif
+
+    if (fullScreenDirty) {
+        viewport()->update();
+        return;
+    }
+
+    const int scrollbackSize   = m_scrollback.size();
+    const int startLine        = visibleStartLine();
+    const int firstVisibleRow  = std::max(0, scrollbackSize + dirtyTopRow    - startLine);
+    const int lastVisibleRow   = std::min(m_emulator.rows() - 1,
+                                          scrollbackSize + dirtyBottomRow - startLine);
+
+    if (firstVisibleRow <= lastVisibleRow) {
+        const QRect dirtyRect(0,
+                              firstVisibleRow * m_cellHeight,
+                              viewport()->width(),
+                              (lastVisibleRow - firstVisibleRow + 1) * m_cellHeight);
+        viewport()->update(dirtyRect);
+    } else {
         viewport()->update();
     }
 
-    // Schedule next flush if there's more pending output
+    // If more output arrived while we were processing, schedule another flush.
     if (!m_pendingSessionOutput.isEmpty() && !m_outputFlushQueued) {
         m_outputFlushQueued = true;
-        const int flushDelayMs = m_pendingSessionOutput.size() >= 16 * 1024 ? 4 : 0;
-        QTimer::singleShot(flushDelayMs, this, [this]() {
+        QTimer::singleShot(0, this, [this]() {
             m_outputFlushQueued = false;
             flushPendingSessionOutput();
         });
