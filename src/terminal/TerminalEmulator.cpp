@@ -1120,13 +1120,18 @@ void TerminalEmulator::eraseInDisplay(int mode)
         m_cursorCol = 0;
         
         markDirtyAll();
+        
+        // CRITICAL: Reset viewport scroll state to prevent desync
         m_pendingViewportScrollLines = 0;
-        // If output scrolled earlier in this batch, dropping those lines keeps
-        // ED2/ED3 from repopulating scrollback after a clear.
+        
+        // Clear any scrolled lines from this batch to prevent repopulation
         m_scrolledLines.clear();
-        if (mode == 3) {
-            m_scrollbackClearRequested = true;
-        }
+        
+        // On Windows, ED2 (clear screen) should also clear scrollback to prevent
+        // renderer desync issues with ConPTY batching. ED3 explicitly clears scrollback.
+        // This matches Windows Terminal and other modern terminal behavior.
+        m_scrollbackClearRequested = true;
+        
         return;
     }
 
