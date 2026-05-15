@@ -393,11 +393,12 @@ bool TerminalSession::start(const TerminalProfile &profile)
     securityAttributes.nLength = sizeof(securityAttributes);
     securityAttributes.bInheritHandle = TRUE;
 
-    if (!::CreatePipe(&conPty->ptyInputRead, &conPty->ptyInputWrite, &securityAttributes, 0)) {
+    constexpr DWORD pipeBufferSize = 64 * 1024;
+    if (!::CreatePipe(&conPty->ptyInputRead, &conPty->ptyInputWrite, &securityAttributes, pipeBufferSize)) {
         emit sessionError(QStringLiteral("CreatePipe(input) failed: %1").arg(formatWin32Error(::GetLastError())));
         return false;
     }
-    if (!::CreatePipe(&conPty->ptyOutputRead, &conPty->ptyOutputWrite, &securityAttributes, 0)) {
+    if (!::CreatePipe(&conPty->ptyOutputRead, &conPty->ptyOutputWrite, &securityAttributes, pipeBufferSize)) {
         emit sessionError(QStringLiteral("CreatePipe(output) failed: %1").arg(formatWin32Error(::GetLastError())));
         return false;
     }
@@ -497,27 +498,63 @@ bool TerminalSession::start(const TerminalProfile &profile)
 
     state->readerThread = std::thread([this, state]() {
         std::vector<char> buffer(8192);
+        constexpr int maxChunksPerBatch = 32;
+        constexpr qsizetype maxBytesPerBatch = 256 * 1024;
+        QByteArray batchedOutput;
+        batchedOutput.reserve(static_cast<qsizetype>(buffer.size()) * 4);
+
+        auto dispatchBatchedOutput = [this, &batchedOutput]() {
+            if (batchedOutput.isEmpty()) {
+                return;
+            }
+            QByteArray chunk = std::move(batchedOutput);
+            batchedOutput.clear();
+            QMetaObject::invokeMethod(this, [this, chunk]() {
+                emit outputReceived(chunk);
+            }, Qt::QueuedConnection);
+        };
+
         while (!state->stopRequested.load()) {
             DWORD bytesRead = 0;
             const BOOL ok = ::ReadFile(state->ptyOutputRead, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, nullptr);
             if (ok && bytesRead > 0) {
-                const QByteArray chunk(buffer.data(), static_cast<int>(bytesRead));
-                QMetaObject::invokeMethod(this, [this, chunk]() {
-                    emit outputReceived(chunk);
-                }, Qt::QueuedConnection);
+                batchedOutput.append(buffer.data(), static_cast<qsizetype>(bytesRead));
+
+                int chunksRead = 1;
+                while (!state->stopRequested.load() && chunksRead < maxChunksPerBatch && batchedOutput.size() < maxBytesPerBatch) {
+                    DWORD availableBytes = 0;
+                    if (!::PeekNamedPipe(state->ptyOutputRead, nullptr, 0, nullptr, &availableBytes, nullptr) || availableBytes == 0) {
+                        break;
+                    }
+
+                    bytesRead = 0;
+                    const DWORD chunkBytes = std::min<DWORD>(availableBytes, static_cast<DWORD>(buffer.size()));
+                    const BOOL chunkOk = ::ReadFile(state->ptyOutputRead, buffer.data(), chunkBytes, &bytesRead, nullptr);
+                    if (!chunkOk || bytesRead == 0) {
+                        break;
+                    }
+                    batchedOutput.append(buffer.data(), static_cast<qsizetype>(bytesRead));
+                    ++chunksRead;
+                }
+
+                dispatchBatchedOutput();
                 continue;
             }
 
             const DWORD error = ::GetLastError();
             if (state->stopRequested.load() || error == ERROR_BROKEN_PIPE || error == ERROR_HANDLE_EOF || error == ERROR_NO_DATA
                 || error == ERROR_OPERATION_ABORTED) {
+                dispatchBatchedOutput();
                 break;
             }
+            dispatchBatchedOutput();
             QMetaObject::invokeMethod(this, [this, error]() {
                 emit sessionError(QStringLiteral("ConPTY read failed: %1").arg(formatWin32Error(error)));
             }, Qt::QueuedConnection);
             break;
         }
+
+        dispatchBatchedOutput();
     });
 
     state->writerThread = std::thread([this, state]() {
