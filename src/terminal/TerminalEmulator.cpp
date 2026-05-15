@@ -275,6 +275,26 @@ void TerminalEmulator::feedByte(unsigned char ch)
             flushIncompleteUtf8();
             return;
         }
+        if (ch == 0x84) { // 8-bit IND (index)
+            flushIncompleteUtf8();
+            newline();
+            return;
+        }
+        if (ch == 0x85) { // 8-bit NEL (next line)
+            flushIncompleteUtf8();
+            newline();
+            m_cursorCol = 0;
+            return;
+        }
+        if (ch == 0x8d) { // 8-bit RI (reverse index)
+            flushIncompleteUtf8();
+            if (m_cursorRow == m_scrollTop) {
+                scrollDown(m_scrollTop, m_scrollBottom);
+            } else if (m_cursorRow > 0) {
+                --m_cursorRow;
+            }
+            return;
+        }
         if (ch == 0x1b) {
             flushIncompleteUtf8();
             m_parserState = ParserState::Escape;
@@ -305,6 +325,14 @@ void TerminalEmulator::feedByte(unsigned char ch)
             if (m_cursorCol > 0) {
                 --m_cursorCol;
             }
+            return;
+        }
+        if (ch == '\f') {
+            flushIncompleteUtf8();
+            // Legacy clear-screen control used by some Windows console paths (e.g. cls when VT is not emitted).
+            clearScreen();
+            m_scrolledLines.clear();
+            m_scrollbackClearRequested = true;
             return;
         }
         if (ch == '\t') {
@@ -402,6 +430,8 @@ void TerminalEmulator::feedByte(unsigned char ch)
         }
         if (ch == 'c') {
             reset();
+            m_scrolledLines.clear();
+            m_scrollbackClearRequested = true;
             return;
         }
         return;
@@ -424,6 +454,11 @@ void TerminalEmulator::feedByte(unsigned char ch)
         return;
 
     case ParserState::Csi:
+        if (ch == 0x18 || ch == 0x1a) { // CAN/SUB
+            m_csiParams.clear();
+            m_parserState = ParserState::Ground;
+            return;
+        }
         if (isFinalCsiByte(ch)) {
             handleCsi(static_cast<char>(ch), m_csiParams);
             m_csiParams.clear();
@@ -439,6 +474,11 @@ void TerminalEmulator::feedByte(unsigned char ch)
         return;
 
     case ParserState::Osc:
+        if (ch == 0x18 || ch == 0x1a) { // CAN/SUB
+            m_oscData.clear();
+            m_parserState = ParserState::Ground;
+            return;
+        }
         if (ch == 0x07) {
             handleOsc(m_oscData);
             m_oscData.clear();
@@ -475,6 +515,10 @@ void TerminalEmulator::feedByte(unsigned char ch)
         return;
 
     case ParserState::Dcs:
+        if (ch == 0x18 || ch == 0x1a) { // CAN/SUB
+            m_parserState = ParserState::Ground;
+            return;
+        }
         if (ch == 0x07 || ch == 0x9c) {
             m_parserState = ParserState::Ground;
             return;
@@ -490,6 +534,10 @@ void TerminalEmulator::feedByte(unsigned char ch)
         return;
 
     case ParserState::IgnoredString:
+        if (ch == 0x18 || ch == 0x1a) { // CAN/SUB
+            m_parserState = ParserState::Ground;
+            return;
+        }
         if (ch == 0x07 || ch == 0x9c) {
             m_parserState = ParserState::Ground;
             return;
