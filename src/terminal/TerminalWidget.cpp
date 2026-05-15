@@ -8,9 +8,11 @@
 #include <QFocusEvent>
 #include <QFont>
 #include <QFontDatabase>
+#if defined(Q_OS_WIN)
 #include <QFontInfo>
-#include <QFontMetrics>
 #include <QFontMetricsF>
+#endif
+#include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPaintEvent>
@@ -20,7 +22,9 @@
 #include <QWheelEvent>
 
 #include <algorithm>
+#if defined(Q_OS_WIN)
 #include <cmath>
+#endif
 #include <utility>
 
 namespace nord::terminal {
@@ -36,13 +40,6 @@ QString scalarFromCodepoint(uint codepoint)
 QFont withSymbolFallbacks(const QFont &baseFont)
 {
     QFont font(baseFont);
-    font.setKerning(false);
-    font.setHintingPreference(QFont::PreferFullHinting);
-    font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
-    font.setFixedPitch(true);
-#if defined(Q_OS_WIN)
-    font.setStyleStrategy(static_cast<QFont::StyleStrategy>(font.styleStrategy() | QFont::NoFontMerging));
-#endif
 
     QStringList families = font.families();
     if (families.isEmpty()) {
@@ -85,7 +82,10 @@ QFont withSymbolFallbacks(const QFont &baseFont)
         QStringLiteral("MesloLGS Nerd Font Mono"),
         QStringLiteral("Hack Nerd Font"),
         QStringLiteral("Hack Nerd Font Mono"),
-        QStringLiteral("Symbols Nerd Font Mono")
+        QStringLiteral("Symbols Nerd Font Mono"),
+        QStringLiteral("Symbols Nerd Font"),
+        QStringLiteral("Noto Sans Symbols2"),
+        QStringLiteral("Noto Color Emoji")
     };
 #endif
 
@@ -98,7 +98,11 @@ QFont withSymbolFallbacks(const QFont &baseFont)
     };
 
     for (const QString &family : preferredFallbackFamilies) {
+#if defined(Q_OS_WIN)
         if (familyAvailable(family) && database.isFixedPitch(family)) {
+#else
+        if (familyAvailable(family)) {
+#endif
             families << family;
         }
     }
@@ -124,6 +128,13 @@ QFont withSymbolFallbacks(const QFont &baseFont)
         font.setFamilies(deduplicatedFamilies);
     }
 
+#if defined(Q_OS_WIN)
+    font.setKerning(false);
+    font.setHintingPreference(QFont::PreferFullHinting);
+    font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
+    font.setFixedPitch(true);
+    font.setStyleStrategy(static_cast<QFont::StyleStrategy>(font.styleStrategy() | QFont::NoFontMerging));
+
     if (!QFontInfo(font).fixedPitch()) {
         QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
         if (font.pointSize() > 0) {
@@ -133,11 +144,14 @@ QFont withSymbolFallbacks(const QFont &baseFont)
         fixedFont.setHintingPreference(QFont::PreferFullHinting);
         fixedFont.setStyleHint(QFont::Monospace, QFont::PreferDefault);
         fixedFont.setFixedPitch(true);
-#if defined(Q_OS_WIN)
         fixedFont.setStyleStrategy(static_cast<QFont::StyleStrategy>(fixedFont.styleStrategy() | QFont::NoFontMerging));
-#endif
         return fixedFont;
     }
+#else
+    font.setKerning(false);
+    font.setHintingPreference(QFont::PreferFullHinting);
+    font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
+#endif
 
     return font;
 }
@@ -694,6 +708,7 @@ void TerminalWidget::focusOutEvent(QFocusEvent *event)
 
 void TerminalWidget::recalculateGrid()
 {
+#if defined(Q_OS_WIN)
     QFontMetricsF metrics(m_theme.font);
     const qreal advanceM = metrics.horizontalAdvance(QStringLiteral("M"));
     const qreal advanceW = metrics.horizontalAdvance(QStringLiteral("W"));
@@ -702,6 +717,14 @@ void TerminalWidget::recalculateGrid()
     m_cellWidth = std::max(1, static_cast<int>(std::ceil(maxAdvance)));
     m_cellHeight = std::max(1, static_cast<int>(std::ceil(metrics.height())));
     m_ascent = std::max(1, static_cast<int>(std::lround(metrics.ascent())));
+#else
+    QFontMetrics metrics(m_theme.font);
+    const int advanceM = metrics.horizontalAdvance(QStringLiteral("M"));
+    const int advanceW = metrics.horizontalAdvance(QStringLiteral("W"));
+    m_cellWidth = std::max({1, metrics.averageCharWidth(), advanceM, advanceW});
+    m_cellHeight = std::max(1, metrics.height());
+    m_ascent = metrics.ascent();
+#endif
 
     const int rows = std::max(1, viewport()->height() / m_cellHeight);
     const int cols = std::max(1, viewport()->width() / m_cellWidth);

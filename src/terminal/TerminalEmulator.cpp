@@ -3,6 +3,7 @@
 #include <QByteArray>
 #include <QApplication>
 #include <QList>
+#include <QtGlobal>
 
 #include <algorithm>
 #include <cstddef>
@@ -329,10 +330,12 @@ void TerminalEmulator::feedByte(unsigned char ch)
         }
         if (ch == '\f') {
             flushIncompleteUtf8();
+#if defined(Q_OS_WIN)
             // Legacy clear-screen control used by some Windows console paths (e.g. cls when VT is not emitted).
             clearScreen();
             m_scrolledLines.clear();
             m_scrollbackClearRequested = true;
+#endif
             return;
         }
         if (ch == '\t') {
@@ -430,8 +433,10 @@ void TerminalEmulator::feedByte(unsigned char ch)
         }
         if (ch == 'c') {
             reset();
+#if defined(Q_OS_WIN)
             m_scrolledLines.clear();
             m_scrollbackClearRequested = true;
+#endif
             return;
         }
         return;
