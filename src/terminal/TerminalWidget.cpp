@@ -10,7 +10,6 @@
 #include <QFontDatabase>
 #if defined(Q_OS_WIN)
 #include <QFontInfo>
-#include <QFontMetricsF>
 #endif
 #include <QFontMetrics>
 #include <QKeyEvent>
@@ -22,9 +21,6 @@
 #include <QWheelEvent>
 
 #include <algorithm>
-#if defined(Q_OS_WIN)
-#include <cmath>
-#endif
 #include <utility>
 
 namespace nord::terminal {
@@ -35,6 +31,22 @@ QString scalarFromCodepoint(uint codepoint)
 {
     const char32_t scalar = static_cast<char32_t>(codepoint);
     return QString::fromUcs4(&scalar, 1);
+}
+
+bool sameTextStyle(const TerminalCell &lhs, const TerminalCell &rhs)
+{
+    return lhs.bold == rhs.bold
+        && lhs.italic == rhs.italic
+        && lhs.underline == rhs.underline
+        && lhs.strikethrough == rhs.strikethrough
+        && lhs.dim == rhs.dim
+        && lhs.inverse == rhs.inverse
+        && lhs.foreground == rhs.foreground
+        && lhs.background == rhs.background
+        && lhs.hasForegroundRgb == rhs.hasForegroundRgb
+        && lhs.hasBackgroundRgb == rhs.hasBackgroundRgb
+        && lhs.foregroundRgb == rhs.foregroundRgb
+        && lhs.backgroundRgb == rhs.backgroundRgb;
 }
 
 QFont withSymbolFallbacks(const QFont &baseFont)
@@ -133,7 +145,6 @@ QFont withSymbolFallbacks(const QFont &baseFont)
     font.setHintingPreference(QFont::PreferFullHinting);
     font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
     font.setFixedPitch(true);
-    font.setStyleStrategy(static_cast<QFont::StyleStrategy>(font.styleStrategy() | QFont::NoFontMerging));
 
     if (!QFontInfo(font).fixedPitch()) {
         QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
@@ -144,7 +155,6 @@ QFont withSymbolFallbacks(const QFont &baseFont)
         fixedFont.setHintingPreference(QFont::PreferFullHinting);
         fixedFont.setStyleHint(QFont::Monospace, QFont::PreferDefault);
         fixedFont.setFixedPitch(true);
-        fixedFont.setStyleStrategy(static_cast<QFont::StyleStrategy>(fixedFont.styleStrategy() | QFont::NoFontMerging));
         return fixedFont;
     }
 #else
@@ -164,6 +174,7 @@ TerminalWidget::TerminalWidget(QWidget *parent)
     setFocusPolicy(Qt::StrongFocus);
     m_theme.font = withSymbolFallbacks(m_theme.font);
     setFont(m_theme.font);
+    rebuildFontCache();
     viewport()->setAutoFillBackground(false);
     viewport()->setAttribute(Qt::WA_OpaquePaintEvent, true);
     viewport()->setAttribute(Qt::WA_NoSystemBackground, true);
@@ -179,15 +190,20 @@ TerminalWidget::TerminalWidget(QWidget *parent)
 
     m_cursorBlinkTimer.setInterval(500);
     connect(&m_cursorBlinkTimer, &QTimer::timeout, this, [this]() {
+        const QRect cursorRect = cursorViewportRect();
         if (!hasFocus() || !m_emulator.cursorVisible() || m_scrollOffset != 0) {
             if (!m_cursorBlinkVisible) {
                 m_cursorBlinkVisible = true;
-                viewport()->update();
+                if (cursorRect.isValid()) {
+                    viewport()->update(cursorRect);
+                }
             }
             return;
         }
         m_cursorBlinkVisible = !m_cursorBlinkVisible;
-        viewport()->update();
+        if (cursorRect.isValid()) {
+            viewport()->update(cursorRect);
+        }
     });
     m_cursorBlinkTimer.start();
 
@@ -199,6 +215,7 @@ void TerminalWidget::setTheme(const TerminalTheme &theme)
     m_theme = theme;
     m_theme.font = withSymbolFallbacks(m_theme.font);
     setFont(m_theme.font);
+    rebuildFontCache();
     recalculateGrid();
     viewport()->update();
 }
@@ -285,7 +302,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         selectionActive = selectionStartRow <= selectionEndRow;
     }
 
-    QFont styledFont = m_theme.font;
+    QFont styledFont = m_fontRegular;
     bool fontInitialized = false;
     bool lastBold = false;
     bool lastItalic = false;
@@ -364,9 +381,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
 
                 if (!fontInitialized || cell.bold != lastBold || cell.italic != lastItalic
                     || cell.underline != lastUnderline || cell.strikethrough != lastStrike) {
-                    styledFont = m_theme.font;
-                    styledFont.setBold(cell.bold);
-                    styledFont.setItalic(cell.italic);
+                    styledFont = cachedFont(cell.bold, cell.italic);
                     styledFont.setUnderline(cell.underline);
                     styledFont.setStrikeOut(cell.strikethrough);
                     painter.setFont(styledFont);
@@ -396,25 +411,10 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                 QString runText = cell.character;
                 int runEnd = col + 1;
 
-                auto sameTextStyle = [&cell](const TerminalCell &other) {
-                    return cell.bold == other.bold
-                        && cell.italic == other.italic
-                        && cell.underline == other.underline
-                        && cell.strikethrough == other.strikethrough
-                        && cell.dim == other.dim
-                        && cell.inverse == other.inverse
-                        && cell.foreground == other.foreground
-                        && cell.background == other.background
-                        && cell.hasForegroundRgb == other.hasForegroundRgb
-                        && cell.hasBackgroundRgb == other.hasBackgroundRgb
-                        && cell.foregroundRgb == other.foregroundRgb
-                        && cell.backgroundRgb == other.backgroundRgb;
-                };
-
                 while (runEnd < cols) {
                     const TerminalCell &next = runEnd < static_cast<int>(rowCells.size()) ? rowCells[static_cast<std::size_t>(runEnd)] : emptyCell;
                     if (next.wide || next.wideContinuation || next.character.isEmpty() || next.character.size() > 1
-                        || !sameTextStyle(next)) {
+                        || !sameTextStyle(cell, next)) {
                         break;
                     }
                     runText.append(next.character);
@@ -472,9 +472,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
 
             if (!fontInitialized || cell.bold != lastBold || cell.italic != lastItalic
                 || cell.underline != lastUnderline || cell.strikethrough != lastStrike) {
-                styledFont = m_theme.font;
-                styledFont.setBold(cell.bold);
-                styledFont.setItalic(cell.italic);
+                styledFont = cachedFont(cell.bold, cell.italic);
                 styledFont.setUnderline(cell.underline);
                 styledFont.setStrikeOut(cell.strikethrough);
                 painter.setFont(styledFont);
@@ -505,25 +503,10 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
             QString runText = cell.character;
             int runEnd = col + 1;
 
-            auto sameTextStyle = [&cell](const TerminalCell &other) {
-                return cell.bold == other.bold
-                    && cell.italic == other.italic
-                    && cell.underline == other.underline
-                    && cell.strikethrough == other.strikethrough
-                    && cell.dim == other.dim
-                    && cell.inverse == other.inverse
-                    && cell.foreground == other.foreground
-                    && cell.background == other.background
-                    && cell.hasForegroundRgb == other.hasForegroundRgb
-                    && cell.hasBackgroundRgb == other.hasBackgroundRgb
-                    && cell.foregroundRgb == other.foregroundRgb
-                    && cell.backgroundRgb == other.backgroundRgb;
-            };
-
             while (runEnd < cols) {
                 const TerminalCell &next = rowCells[static_cast<std::size_t>(runEnd)];
                 if (next.wide || next.wideContinuation || next.character.isEmpty() || next.character.size() > 1
-                    || !sameTextStyle(next)) {
+                    || !sameTextStyle(cell, next)) {
                     break;
                 }
                 runText.append(next.character);
@@ -541,9 +524,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         const QRect cursorRect(cursor.x() * m_cellWidth, cursor.y() * m_cellHeight, m_cellWidth, m_cellHeight);
         const TerminalCell &cursorCell = m_emulator.cellAt(cursor.y(), cursor.x());
         painter.fillRect(cursorRect, m_theme.cursor);
-        QFont cursorFont = m_theme.font;
-        cursorFont.setBold(cursorCell.bold);
-        cursorFont.setItalic(cursorCell.italic);
+        QFont cursorFont = cachedFont(cursorCell.bold, cursorCell.italic);
         cursorFont.setUnderline(cursorCell.underline);
         cursorFont.setStrikeOut(cursorCell.strikethrough);
         const QString cursorChar = cursorCell.character;
@@ -696,35 +677,34 @@ void TerminalWidget::focusInEvent(QFocusEvent *event)
 {
     QAbstractScrollArea::focusInEvent(event);
     resetCursorBlink();
-    viewport()->update();
+    const QRect cursorRect = cursorViewportRect();
+    if (cursorRect.isValid()) {
+        viewport()->update(cursorRect);
+    } else {
+        viewport()->update();
+    }
 }
 
 void TerminalWidget::focusOutEvent(QFocusEvent *event)
 {
     QAbstractScrollArea::focusOutEvent(event);
     m_cursorBlinkVisible = true;
-    viewport()->update();
+    const QRect cursorRect = cursorViewportRect();
+    if (cursorRect.isValid()) {
+        viewport()->update(cursorRect);
+    } else {
+        viewport()->update();
+    }
 }
 
 void TerminalWidget::recalculateGrid()
 {
-#if defined(Q_OS_WIN)
-    QFontMetricsF metrics(m_theme.font);
-    const qreal advanceM = metrics.horizontalAdvance(QStringLiteral("M"));
-    const qreal advanceW = metrics.horizontalAdvance(QStringLiteral("W"));
-    const qreal advanceZero = metrics.horizontalAdvance(QStringLiteral("0"));
-    const qreal maxAdvance = std::max({advanceM, advanceW, advanceZero});
-    m_cellWidth = std::max(1, static_cast<int>(std::ceil(maxAdvance)));
-    m_cellHeight = std::max(1, static_cast<int>(std::ceil(metrics.height())));
-    m_ascent = std::max(1, static_cast<int>(std::lround(metrics.ascent())));
-#else
     QFontMetrics metrics(m_theme.font);
     const int advanceM = metrics.horizontalAdvance(QStringLiteral("M"));
     const int advanceW = metrics.horizontalAdvance(QStringLiteral("W"));
     m_cellWidth = std::max({1, metrics.averageCharWidth(), advanceM, advanceW});
     m_cellHeight = std::max(1, metrics.height());
     m_ascent = metrics.ascent();
-#endif
 
     const int rows = std::max(1, viewport()->height() / m_cellHeight);
     const int cols = std::max(1, viewport()->width() / m_cellWidth);
@@ -737,6 +717,38 @@ void TerminalWidget::recalculateGrid()
     if (verticalScrollBar()->value() == verticalScrollBar()->maximum()) {
         m_scrollOffset = 0;
     }
+}
+
+void TerminalWidget::rebuildFontCache()
+{
+    m_fontRegular = m_theme.font;
+    m_fontBold = m_theme.font;
+    m_fontBold.setBold(true);
+    m_fontItalic = m_theme.font;
+    m_fontItalic.setItalic(true);
+    m_fontBoldItalic = m_theme.font;
+    m_fontBoldItalic.setBold(true);
+    m_fontBoldItalic.setItalic(true);
+}
+
+const QFont &TerminalWidget::cachedFont(bool bold, bool italic) const
+{
+    if (bold) {
+        return italic ? m_fontBoldItalic : m_fontBold;
+    }
+    return italic ? m_fontItalic : m_fontRegular;
+}
+
+QRect TerminalWidget::cursorViewportRect() const
+{
+    if (m_cellWidth <= 0 || m_cellHeight <= 0 || m_scrollOffset != 0 || m_emulator.rows() <= 0 || m_emulator.cols() <= 0) {
+        return {};
+    }
+    const QPoint cursor = m_emulator.cursorPosition();
+    if (cursor.x() < 0 || cursor.x() >= m_emulator.cols() || cursor.y() < 0 || cursor.y() >= m_emulator.rows()) {
+        return {};
+    }
+    return QRect(cursor.x() * m_cellWidth, cursor.y() * m_cellHeight, m_cellWidth, m_cellHeight);
 }
 
 void TerminalWidget::consumeSessionOutput(const QByteArray &data)
@@ -847,15 +859,9 @@ void TerminalWidget::flushPendingSessionOutput()
             updatedRegion = true;
         }
     }
-#if defined(Q_OS_WIN)
-    if (!updatedRegion) {
-        viewport()->update();
-    }
-#else
     if (!updatedRegion && !hasDirtyRows) {
         viewport()->update();
     }
-#endif
 
     if (!m_pendingSessionOutput.isEmpty() && !m_outputFlushQueued) {
         m_outputFlushQueued = true;
@@ -958,6 +964,7 @@ void TerminalWidget::maybeSendMouseReport(QMouseEvent *event, bool release)
 
     const bool isMoveEvent = event->type() == QEvent::MouseMove;
     int code = -1;
+    int sgrReleaseCode = -1;
     bool useReleaseSuffix = release;
 
     auto buttonToCode = [](Qt::MouseButton button) {
@@ -994,11 +1001,16 @@ void TerminalWidget::maybeSendMouseReport(QMouseEvent *event, bool release)
         useReleaseSuffix = false;
     } else if (release) {
         code = 3;
+        sgrReleaseCode = buttonToCode(event->button());
+        if (sgrReleaseCode < 0) {
+            sgrReleaseCode = 0;
+        }
     } else {
         code = buttonToCode(event->button());
         if (code < 0) {
             return;
         }
+        sgrReleaseCode = code;
     }
 
     const QPoint cell = toViewportCell(event->pos());
@@ -1006,7 +1018,8 @@ void TerminalWidget::maybeSendMouseReport(QMouseEvent *event, bool release)
     const int y = cell.y() + 1;
     QByteArray report;
     if (m_emulator.mouseSgrMode()) {
-        report = "\x1b[<" + QByteArray::number(code) + ";" + QByteArray::number(x) + ";" + QByteArray::number(y)
+        const int reportCode = (release && !isMoveEvent) ? sgrReleaseCode : code;
+        report = "\x1b[<" + QByteArray::number(reportCode) + ";" + QByteArray::number(x) + ";" + QByteArray::number(y)
             + (useReleaseSuffix ? "m" : "M");
     } else {
         const int legacyX = std::clamp(x, 1, 223);

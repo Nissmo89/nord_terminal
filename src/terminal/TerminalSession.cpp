@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QMetaObject>
+#include <QPointer>
 #include <QStandardPaths>
 
 #include <algorithm>
@@ -186,6 +187,7 @@ struct TerminalSession::ConPtyState {
     std::atomic_bool running {false};
     std::atomic_bool stopRequested {false};
     std::atomic_bool exitEmitted {false};
+    quint64 generation = 0;
 
     ~ConPtyState()
     {
@@ -226,7 +228,7 @@ TerminalSession::~TerminalSession()
         m_childPid = -1;
     }
 #else
-    terminate();
+    terminateWindows(true);
 #endif
 }
 
@@ -239,7 +241,7 @@ bool TerminalSession::start(const TerminalProfile &profile)
 
 #if defined(Q_OS_WIN)
     if (m_conPty) {
-        terminate();
+        terminateWindows(false);
     }
 #endif
 #if defined(Q_OS_UNIX)
@@ -287,6 +289,7 @@ bool TerminalSession::start(const TerminalProfile &profile)
     m_profile = profile;
 #if defined(Q_OS_WIN)
     m_profile.shellPath = shellPathInfo.absoluteFilePath();
+    const quint64 generation = m_generation.fetch_add(1, std::memory_order_relaxed) + 1;
 #endif
 
 #if defined(Q_OS_UNIX)
@@ -393,7 +396,7 @@ bool TerminalSession::start(const TerminalProfile &profile)
     securityAttributes.nLength = sizeof(securityAttributes);
     securityAttributes.bInheritHandle = TRUE;
 
-    constexpr DWORD pipeBufferSize = 64 * 1024;
+    constexpr DWORD pipeBufferSize = 256 * 1024;
     if (!::CreatePipe(&conPty->ptyInputRead, &conPty->ptyInputWrite, &securityAttributes, pipeBufferSize)) {
         emit sessionError(QStringLiteral("CreatePipe(input) failed: %1").arg(formatWin32Error(::GetLastError())));
         return false;
@@ -495,22 +498,31 @@ bool TerminalSession::start(const TerminalProfile &profile)
 
     ConPtyState *state = conPty.get();
     state->running.store(true);
+    state->generation = generation;
+    QPointer<TerminalSession> owner(this);
 
-    state->readerThread = std::thread([this, state]() {
+    state->readerThread = std::thread([owner, state]() {
         std::vector<char> buffer(8192);
         constexpr int maxChunksPerBatch = 32;
         constexpr qsizetype maxBytesPerBatch = 256 * 1024;
         QByteArray batchedOutput;
         batchedOutput.reserve(static_cast<qsizetype>(buffer.size()) * 4);
+        const quint64 capturedGeneration = state->generation;
 
-        auto dispatchBatchedOutput = [this, &batchedOutput]() {
+        auto dispatchBatchedOutput = [owner, capturedGeneration, &batchedOutput]() {
             if (batchedOutput.isEmpty()) {
                 return;
             }
             QByteArray chunk = std::move(batchedOutput);
             batchedOutput.clear();
-            QMetaObject::invokeMethod(this, [this, chunk]() {
-                emit outputReceived(chunk);
+            if (!owner) {
+                return;
+            }
+            QMetaObject::invokeMethod(owner.data(), [owner, chunk = std::move(chunk), capturedGeneration]() {
+                if (!owner || owner->m_generation.load(std::memory_order_relaxed) != capturedGeneration) {
+                    return;
+                }
+                emit owner->outputReceived(chunk);
             }, Qt::QueuedConnection);
         };
 
@@ -548,16 +560,22 @@ bool TerminalSession::start(const TerminalProfile &profile)
                 break;
             }
             dispatchBatchedOutput();
-            QMetaObject::invokeMethod(this, [this, error]() {
-                emit sessionError(QStringLiteral("ConPTY read failed: %1").arg(formatWin32Error(error)));
-            }, Qt::QueuedConnection);
+            if (owner) {
+                QMetaObject::invokeMethod(owner.data(), [owner, error, capturedGeneration]() {
+                    if (!owner || owner->m_generation.load(std::memory_order_relaxed) != capturedGeneration) {
+                        return;
+                    }
+                    emit owner->sessionError(QStringLiteral("ConPTY read failed: %1").arg(formatWin32Error(error)));
+                }, Qt::QueuedConnection);
+            }
             break;
         }
 
         dispatchBatchedOutput();
     });
 
-    state->writerThread = std::thread([this, state]() {
+    state->writerThread = std::thread([owner, state]() {
+        const quint64 capturedGeneration = state->generation;
         for (;;) {
             QByteArray toWrite;
             {
@@ -588,16 +606,22 @@ bool TerminalSession::start(const TerminalProfile &profile)
                     || error == ERROR_OPERATION_ABORTED) {
                     break;
                 }
-                QMetaObject::invokeMethod(this, [this, error]() {
-                    emit sessionError(QStringLiteral("ConPTY write failed: %1").arg(formatWin32Error(error)));
-                }, Qt::QueuedConnection);
+                if (owner) {
+                    QMetaObject::invokeMethod(owner.data(), [owner, error, capturedGeneration]() {
+                        if (!owner || owner->m_generation.load(std::memory_order_relaxed) != capturedGeneration) {
+                            return;
+                        }
+                        emit owner->sessionError(QStringLiteral("ConPTY write failed: %1").arg(formatWin32Error(error)));
+                    }, Qt::QueuedConnection);
+                }
                 state->stopRequested.store(true);
                 break;
             }
         }
     });
 
-    state->waitThread = std::thread([this, state]() {
+    state->waitThread = std::thread([owner, state]() {
+        const quint64 capturedGeneration = state->generation;
         const DWORD waitResult = ::WaitForSingleObject(state->processInfo.hProcess, INFINITE);
         int exitCode = 0;
         if (waitResult == WAIT_OBJECT_0) {
@@ -611,9 +635,14 @@ bool TerminalSession::start(const TerminalProfile &profile)
         state->writeCv.notify_all();
 
         if (!state->exitEmitted.exchange(true)) {
-            QMetaObject::invokeMethod(this, [this, exitCode]() {
-                emit processExited(exitCode);
-            }, Qt::QueuedConnection);
+            if (owner) {
+                QMetaObject::invokeMethod(owner.data(), [owner, exitCode, capturedGeneration]() {
+                    if (!owner || owner->m_generation.load(std::memory_order_relaxed) != capturedGeneration) {
+                        return;
+                    }
+                    emit owner->processExited(exitCode);
+                }, Qt::QueuedConnection);
+            }
         }
     });
 
@@ -728,52 +757,74 @@ void TerminalSession::terminate()
         m_exitCheckTimer->start();
     }
 #else
+    terminateWindows(false);
+#endif
+}
+
+#if defined(Q_OS_WIN)
+void TerminalSession::terminateWindows(bool blockUntilStopped)
+{
     if (!m_conPty) {
         return;
     }
 
     ConPtyState *state = m_conPty;
-    state->stopRequested.store(true);
-    state->writeCv.notify_all();
-
-    if (state->closePseudoConsole && state->pseudoConsole) {
-        state->closePseudoConsole(state->pseudoConsole);
-        state->pseudoConsole = nullptr;
-    }
-
-    if (isValidHandle(state->processInfo.hProcess)) {
-        const DWORD waitResult = ::WaitForSingleObject(state->processInfo.hProcess, 1000);
-        if (waitResult == WAIT_TIMEOUT) {
-            ::TerminateProcess(state->processInfo.hProcess, 1);
-        }
-    }
-
-    if (state->writerThread.joinable()) {
-        state->writerThread.join();
-    }
-    if (state->readerThread.joinable()) {
-        state->readerThread.join();
-    }
-    if (state->waitThread.joinable()) {
-        state->waitThread.join();
-    }
-
-    closeHandleSafely(state->ptyInputRead);
-    closeHandleSafely(state->ptyInputWrite);
-    closeHandleSafely(state->ptyOutputRead);
-    closeHandleSafely(state->ptyOutputWrite);
-    closeHandleSafely(state->processInfo.hThread);
-    closeHandleSafely(state->processInfo.hProcess);
-    state->running.store(false);
-
-    if (!state->exitEmitted.exchange(true)) {
-        emit processExited(0);
-    }
-
-    delete state;
     m_conPty = nullptr;
-#endif
+    const quint64 capturedGeneration = state->generation;
+
+    auto teardownState = [state]() {
+        state->stopRequested.store(true);
+        state->writeCv.notify_all();
+
+        if (state->closePseudoConsole && state->pseudoConsole) {
+            state->closePseudoConsole(state->pseudoConsole);
+            state->pseudoConsole = nullptr;
+        }
+
+        closeHandleSafely(state->ptyInputWrite);
+        closeHandleSafely(state->ptyOutputRead);
+
+        if (isValidHandle(state->processInfo.hProcess)) {
+            const DWORD waitResult = ::WaitForSingleObject(state->processInfo.hProcess, 1000);
+            if (waitResult == WAIT_TIMEOUT) {
+                ::TerminateProcess(state->processInfo.hProcess, 1);
+                ::WaitForSingleObject(state->processInfo.hProcess, 1000);
+            }
+        }
+
+        if (state->writerThread.joinable()) {
+            state->writerThread.join();
+        }
+        if (state->readerThread.joinable()) {
+            state->readerThread.join();
+        }
+        if (state->waitThread.joinable()) {
+            state->waitThread.join();
+        }
+        state->running.store(false);
+    };
+
+    if (blockUntilStopped) {
+        teardownState();
+        delete state;
+        return;
+    }
+
+    QPointer<TerminalSession> owner(this);
+    std::thread([owner, state, capturedGeneration, teardownState]() mutable {
+        teardownState();
+        if (!state->exitEmitted.exchange(true) && owner) {
+            QMetaObject::invokeMethod(owner.data(), [owner, capturedGeneration]() {
+                if (!owner || owner->m_generation.load(std::memory_order_relaxed) != capturedGeneration) {
+                    return;
+                }
+                emit owner->processExited(0);
+            }, Qt::QueuedConnection);
+        }
+        delete state;
+    }).detach();
 }
+#endif
 
 TerminalProfile TerminalSession::activeProfile() const
 {

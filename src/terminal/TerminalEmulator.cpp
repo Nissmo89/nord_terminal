@@ -351,12 +351,6 @@ void TerminalEmulator::feedByte(unsigned char ch)
         }
         if (ch == '\f') {
             flushIncompleteUtf8();
-#if defined(Q_OS_WIN)
-            // Legacy clear-screen control used by some Windows console paths (e.g. cls when VT is not emitted).
-            clearScreen();
-            m_scrolledLines.clear();
-            m_scrollbackClearRequested = true;
-#endif
             return;
         }
         if (ch == '\t') {
@@ -454,10 +448,6 @@ void TerminalEmulator::feedByte(unsigned char ch)
         }
         if (ch == 'c') {
             reset();
-#if defined(Q_OS_WIN)
-            m_scrolledLines.clear();
-            m_scrollbackClearRequested = true;
-#endif
             return;
         }
         return;
@@ -824,14 +814,17 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
         }
     }
 
+    auto &cells = activeCells();
     int charWidth = std::clamp(codepointDisplayWidth(codepoint), 1, 2);
     if (charWidth == 2 && m_cursorCol == m_cols - 1) {
         if (m_autoWrapMode) {
             newline();
             m_cursorCol = 0;
         } else {
-            codepoint = static_cast<char32_t>(' ');
-            charWidth = 1;
+            cells[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol))] = makeEraseCell();
+            markDirtyRow(m_cursorRow);
+            m_cursorCol = m_cols - 1;
+            return;
         }
     }
 
@@ -853,7 +846,6 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
     cell.wide = charWidth == 2;
     cell.wideContinuation = false;
 
-    auto &cells = activeCells();
     if (m_insertMode) {
         const int shift = std::clamp(charWidth, 1, m_cols - m_cursorCol);
         for (int col = m_cols - 1; col >= m_cursorCol + shift; --col) {

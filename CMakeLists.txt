@@ -56,6 +56,11 @@ target_link_libraries(NordTerminal
         Qt6::Widgets
 )
 
+if(WIN32)
+    target_compile_definitions(NordTerminal PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_link_libraries(NordTerminal PRIVATE kernel32)
+endif()
+
 if(NORD_TERMINAL_ENABLE_LTO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT _nordterminal_ipo_supported OUTPUT _nordterminal_ipo_error)

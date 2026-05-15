@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QAbstractScrollArea>
+#include <QFont>
+#include <QRect>
 #include <QTimer>
 
 #include "nordterminal/TerminalEmulator.h"
@@ -39,6 +41,9 @@ protected:
 
 private:
     void recalculateGrid();
+    void rebuildFontCache();
+    [[nodiscard]] const QFont &cachedFont(bool bold, bool italic) const;
+    [[nodiscard]] QRect cursorViewportRect() const;
     void consumeSessionOutput(const QByteArray &data);
     void flushPendingSessionOutput();
     void resetCursorBlink();
@@ -65,6 +70,10 @@ private:
     bool m_cursorBlinkVisible = true;
     QByteArray m_pendingSessionOutput;
     bool m_outputFlushQueued = false;
+    QFont m_fontRegular;
+    QFont m_fontBold;
+    QFont m_fontItalic;
+    QFont m_fontBoldItalic;
 };
 
 } // namespace nord::terminal

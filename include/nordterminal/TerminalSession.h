@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+
 #include <QByteArray>
 #include <QObject>
 
@@ -49,9 +51,11 @@ private:
     bool m_forceKillSent = false;
     qint64 m_terminationStartMs = 0;
 #else
+    void terminateWindows(bool blockUntilStopped);
     struct ConPtyState;
     ConPtyState *m_conPty = nullptr;
 #endif
+    std::atomic_uint64_t m_generation {0};
     TerminalProfile m_profile;
 };
 
