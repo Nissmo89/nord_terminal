@@ -19,11 +19,7 @@ bool isFinalCsiByte(unsigned char ch)
 
 constexpr bool defaultLineFeedNewLineMode()
 {
-#if defined(Q_OS_WIN)
-    return true;
-#else
     return false;
-#endif
 }
 
 } // namespace
@@ -1095,16 +1091,6 @@ void TerminalEmulator::applySgr(const std::vector<int> &codes)
     }
 }
 
-void TerminalEmulator::clearScreen()
-{
-    const TerminalCell eraseCell = makeEraseCell();
-    std::fill(activeCells().begin(), activeCells().end(), eraseCell);
-    m_cursorRow = 0;
-    m_cursorCol = 0;
-    markDirtyAll();
-    m_pendingViewportScrollLines = 0;
-}
-
 void TerminalEmulator::clearLine(int row, int startCol, int endCol)
 {
     if (row < 0 || row >= m_rows) {
@@ -1130,8 +1116,10 @@ void TerminalEmulator::eraseInDisplay(int mode)
         std::fill(activeCells().begin(), activeCells().end(), eraseCell);
         markDirtyAll();
         m_pendingViewportScrollLines = 0;
+        // If output scrolled earlier in this batch, dropping those lines keeps
+        // ED2/ED3 from repopulating scrollback after a clear.
+        m_scrolledLines.clear();
         if (mode == 3) {
-            m_scrolledLines.clear();
             m_scrollbackClearRequested = true;
         }
         return;

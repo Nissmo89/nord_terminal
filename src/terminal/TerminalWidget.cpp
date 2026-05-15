@@ -717,6 +717,7 @@ void TerminalWidget::recalculateGrid()
     if (verticalScrollBar()->value() == verticalScrollBar()->maximum()) {
         m_scrollOffset = 0;
     }
+    viewport()->update();
 }
 
 void TerminalWidget::rebuildFontCache()
@@ -814,9 +815,12 @@ void TerminalWidget::flushPendingSessionOutput()
         includeDirtyRow(newCursor.y());
     }
 
+    bool scrollbackCleared = false;
     if (m_emulator.takeScrollbackClearRequested()) {
         m_scrollback = TerminalScrollback(m_scrollback.maxLines());
         m_selection.clear();
+        m_scrollOffset = 0;
+        scrollbackCleared = true;
     }
 
     const QByteArray terminalReply = m_emulator.takePendingResponse();
@@ -832,16 +836,18 @@ void TerminalWidget::flushPendingSessionOutput()
         verticalScrollBar()->setValue(verticalScrollBar()->maximum());
     }
 
+    if (scrollbackCleared) {
+        hasDirtyRows = true;
+        dirtyTopRow = 0;
+        dirtyBottomRow = std::max(0, m_emulator.rows() - 1);
+    }
+
     resetCursorBlink();
 
     bool updatedRegion = false;
     if (hasDirtyRows && m_cellHeight > 0 && m_cellWidth > 0) {
         const int dirtyRowCount = dirtyBottomRow - dirtyTopRow + 1;
-#if defined(Q_OS_WIN)
-        constexpr bool allowViewportScrollOptimization = false;
-#else
         constexpr bool allowViewportScrollOptimization = true;
-#endif
         if (allowViewportScrollOptimization && stickToBottom && m_scrollOffset == 0 && viewportScrollLines != 0
             && viewportScrollLines > -m_emulator.rows() && viewportScrollLines < m_emulator.rows()
             && dirtyRowCount < m_emulator.rows()) {
@@ -859,7 +865,7 @@ void TerminalWidget::flushPendingSessionOutput()
             updatedRegion = true;
         }
     }
-    if (!updatedRegion && !hasDirtyRows) {
+    if (!updatedRegion) {
         viewport()->update();
     }
 

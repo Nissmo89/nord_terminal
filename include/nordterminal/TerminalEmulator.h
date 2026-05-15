@@ -93,7 +93,6 @@ private:
     void scrollDown(int topRow, int bottomRow);
     void newline();
     void applySgr(const std::vector<int> &codes);
-    void clearScreen();
     void clearLine(int row, int startCol, int endCol);
     void eraseInDisplay(int mode);
     void eraseInLine(int mode);
