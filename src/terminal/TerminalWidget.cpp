@@ -827,8 +827,16 @@ void TerminalWidget::flushPendingSessionOutput()
     if (!terminalReply.isEmpty()) {
         m_session.writeInput(terminalReply);
     }
-    for (TerminalEmulator::Line line : m_emulator.takeScrolledLines()) {
-        m_scrollback.pushLine(std::move(line));
+    
+    // Process scrolled lines AFTER checking for scrollback clear to prevent
+    // race condition where cleared scrollback gets repopulated with stale lines.
+    if (!scrollbackCleared) {
+        for (TerminalEmulator::Line line : m_emulator.takeScrolledLines()) {
+            m_scrollback.pushLine(std::move(line));
+        }
+    } else {
+        // Discard any scrolled lines if scrollback was just cleared.
+        m_emulator.takeScrolledLines();
     }
 
     verticalScrollBar()->setRange(0, std::max(0, m_scrollback.size()));
@@ -837,6 +845,12 @@ void TerminalWidget::flushPendingSessionOutput()
     }
 
     if (scrollbackCleared) {
+        // Force full viewport repaint after scrollback clear to ensure renderer state is synchronized.
+        verticalScrollBar()->setValue(verticalScrollBar()->maximum());
+        m_scrollOffset = 0;
+        viewport()->update();
+        return;
+    }
         hasDirtyRows = true;
         dirtyTopRow = 0;
         dirtyBottomRow = std::max(0, m_emulator.rows() - 1);
@@ -847,7 +861,16 @@ void TerminalWidget::flushPendingSessionOutput()
     bool updatedRegion = false;
     if (hasDirtyRows && m_cellHeight > 0 && m_cellWidth > 0) {
         const int dirtyRowCount = dirtyBottomRow - dirtyTopRow + 1;
+        
+        // On Windows, viewport scroll optimization can cause rendering artifacts when ConPTY
+        // batches output containing clear sequences. Disable optimization for full-screen clears.
+        const bool isFullScreenClear = (dirtyRowCount >= m_emulator.rows());
+#if defined(Q_OS_WIN)
+        const bool allowViewportScrollOptimization = !isFullScreenClear;
+#else
         constexpr bool allowViewportScrollOptimization = true;
+#endif
+        
         if (allowViewportScrollOptimization && stickToBottom && m_scrollOffset == 0 && viewportScrollLines != 0
             && viewportScrollLines > -m_emulator.rows() && viewportScrollLines < m_emulator.rows()
             && dirtyRowCount < m_emulator.rows()) {
