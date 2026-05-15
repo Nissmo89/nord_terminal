@@ -1114,6 +1114,11 @@ void TerminalEmulator::eraseInDisplay(int mode)
     if (mode == 2 || mode == 3) {
         const TerminalCell eraseCell = makeEraseCell();
         std::fill(activeCells().begin(), activeCells().end(), eraseCell);
+        
+        // Reset cursor to home position after clear (standard VT behavior)
+        m_cursorRow = 0;
+        m_cursorCol = 0;
+        
         markDirtyAll();
         m_pendingViewportScrollLines = 0;
         // If output scrolled earlier in this batch, dropping those lines keeps
