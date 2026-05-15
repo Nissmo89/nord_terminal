@@ -40,6 +40,9 @@ QFont withSymbolFallbacks(const QFont &baseFont)
     font.setHintingPreference(QFont::PreferFullHinting);
     font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
     font.setFixedPitch(true);
+#if defined(Q_OS_WIN)
+    font.setStyleStrategy(static_cast<QFont::StyleStrategy>(font.styleStrategy() | QFont::NoFontMerging));
+#endif
 
     QStringList families = font.families();
     if (families.isEmpty()) {
@@ -130,6 +133,9 @@ QFont withSymbolFallbacks(const QFont &baseFont)
         fixedFont.setHintingPreference(QFont::PreferFullHinting);
         fixedFont.setStyleHint(QFont::Monospace, QFont::PreferDefault);
         fixedFont.setFixedPitch(true);
+#if defined(Q_OS_WIN)
+        fixedFont.setStyleStrategy(static_cast<QFont::StyleStrategy>(fixedFont.styleStrategy() | QFont::NoFontMerging));
+#endif
         return fixedFont;
     }
 
