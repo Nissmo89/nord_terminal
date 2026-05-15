@@ -261,6 +261,16 @@ void TerminalEmulator::feedByte(unsigned char ch)
             m_parserState = ParserState::Osc;
             return;
         }
+        if (ch == 0x90) { // 8-bit DCS
+            flushIncompleteUtf8();
+            m_parserState = ParserState::Dcs;
+            return;
+        }
+        if (ch == 0x98 || ch == 0x9e || ch == 0x9f) { // 8-bit SOS/PM/APC
+            flushIncompleteUtf8();
+            m_parserState = ParserState::IgnoredString;
+            return;
+        }
         if (ch == 0x9c) { // 8-bit ST outside OSC/DCS: ignore
             flushIncompleteUtf8();
             return;
@@ -339,6 +349,14 @@ void TerminalEmulator::feedByte(unsigned char ch)
         if (ch == ']') {
             m_oscData.clear();
             m_parserState = ParserState::Osc;
+            return;
+        }
+        if (ch == 'P') {
+            m_parserState = ParserState::Dcs;
+            return;
+        }
+        if (ch == 'X' || ch == '^' || ch == '_') {
+            m_parserState = ParserState::IgnoredString;
             return;
         }
         if (ch >= 0x20 && ch <= 0x2f) {
@@ -454,6 +472,36 @@ void TerminalEmulator::feedByte(unsigned char ch)
             m_oscData.append(static_cast<char>(ch));
         }
         m_parserState = ParserState::Osc;
+        return;
+
+    case ParserState::Dcs:
+        if (ch == 0x07 || ch == 0x9c) {
+            m_parserState = ParserState::Ground;
+            return;
+        }
+        if (ch == 0x1b) {
+            m_parserState = ParserState::DcsEscape;
+            return;
+        }
+        return;
+
+    case ParserState::DcsEscape:
+        m_parserState = (ch == '\\') ? ParserState::Ground : ParserState::Dcs;
+        return;
+
+    case ParserState::IgnoredString:
+        if (ch == 0x07 || ch == 0x9c) {
+            m_parserState = ParserState::Ground;
+            return;
+        }
+        if (ch == 0x1b) {
+            m_parserState = ParserState::IgnoredStringEscape;
+            return;
+        }
+        return;
+
+    case ParserState::IgnoredStringEscape:
+        m_parserState = (ch == '\\') ? ParserState::Ground : ParserState::IgnoredString;
         return;
     }
 }

@@ -45,7 +45,11 @@ private:
         EscapeIntermediate,
         Csi,
         Osc,
-        OscEscape
+        OscEscape,
+        Dcs,
+        DcsEscape,
+        IgnoredString,
+        IgnoredStringEscape
     };
 
     enum class Charset {

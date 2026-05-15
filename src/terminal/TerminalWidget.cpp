@@ -8,7 +8,9 @@
 #include <QFocusEvent>
 #include <QFont>
 #include <QFontDatabase>
+#include <QFontInfo>
 #include <QFontMetrics>
+#include <QFontMetricsF>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPaintEvent>
@@ -18,6 +20,7 @@
 #include <QWheelEvent>
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 namespace nord::terminal {
@@ -33,12 +36,39 @@ QString scalarFromCodepoint(uint codepoint)
 QFont withSymbolFallbacks(const QFont &baseFont)
 {
     QFont font(baseFont);
+    font.setKerning(false);
+    font.setHintingPreference(QFont::PreferFullHinting);
+    font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
+    font.setFixedPitch(true);
 
     QStringList families = font.families();
     if (families.isEmpty()) {
         families << font.family();
     }
 
+#if defined(Q_OS_WIN)
+    const QStringList preferredFallbackFamilies = {
+        QStringLiteral("Cascadia Mono"),
+        QStringLiteral("Cascadia Code"),
+        QStringLiteral("Consolas"),
+        QStringLiteral("Lucida Console"),
+        QStringLiteral("JetBrainsMono Nerd Font"),
+        QStringLiteral("JetBrainsMono Nerd Font Mono"),
+        QStringLiteral("JetBrains Mono Nerd Font"),
+        QStringLiteral("JetBrains Mono Nerd Font Mono"),
+        QStringLiteral("CaskaydiaCove Nerd Font"),
+        QStringLiteral("CaskaydiaCove Nerd Font Mono"),
+        QStringLiteral("CaskaydiaMono Nerd Font"),
+        QStringLiteral("CaskaydiaMono Nerd Font Mono"),
+        QStringLiteral("FiraCode Nerd Font"),
+        QStringLiteral("FiraCode Nerd Font Mono"),
+        QStringLiteral("MesloLGS Nerd Font"),
+        QStringLiteral("MesloLGS Nerd Font Mono"),
+        QStringLiteral("Hack Nerd Font"),
+        QStringLiteral("Hack Nerd Font Mono"),
+        QStringLiteral("Symbols Nerd Font Mono")
+    };
+#else
     const QStringList preferredFallbackFamilies = {
         QStringLiteral("JetBrainsMono Nerd Font"),
         QStringLiteral("JetBrainsMono Nerd Font Mono"),
@@ -52,11 +82,9 @@ QFont withSymbolFallbacks(const QFont &baseFont)
         QStringLiteral("MesloLGS Nerd Font Mono"),
         QStringLiteral("Hack Nerd Font"),
         QStringLiteral("Hack Nerd Font Mono"),
-        QStringLiteral("Symbols Nerd Font Mono"),
-        QStringLiteral("Symbols Nerd Font"),
-        QStringLiteral("Noto Sans Symbols2"),
-        QStringLiteral("Noto Color Emoji")
+        QStringLiteral("Symbols Nerd Font Mono")
     };
+#endif
 
     const QFontDatabase database;
     const QStringList availableFamilies = database.families();
@@ -67,7 +95,7 @@ QFont withSymbolFallbacks(const QFont &baseFont)
     };
 
     for (const QString &family : preferredFallbackFamilies) {
-        if (familyAvailable(family)) {
+        if (familyAvailable(family) && database.isFixedPitch(family)) {
             families << family;
         }
     }
@@ -92,9 +120,19 @@ QFont withSymbolFallbacks(const QFont &baseFont)
     if (!deduplicatedFamilies.isEmpty()) {
         font.setFamilies(deduplicatedFamilies);
     }
-    font.setKerning(false);
-    font.setHintingPreference(QFont::PreferFullHinting);
-    font.setStyleHint(QFont::Monospace, QFont::PreferDefault);
+
+    if (!QFontInfo(font).fixedPitch()) {
+        QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+        if (font.pointSize() > 0) {
+            fixedFont.setPointSize(font.pointSize());
+        }
+        fixedFont.setKerning(false);
+        fixedFont.setHintingPreference(QFont::PreferFullHinting);
+        fixedFont.setStyleHint(QFont::Monospace, QFont::PreferDefault);
+        fixedFont.setFixedPitch(true);
+        return fixedFont;
+    }
+
     return font;
 }
 
@@ -481,10 +519,16 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
     if (hasFocus() && m_scrollOffset == 0 && m_emulator.cursorVisible() && m_cursorBlinkVisible) {
         const QPoint cursor = m_emulator.cursorPosition();
         const QRect cursorRect(cursor.x() * m_cellWidth, cursor.y() * m_cellHeight, m_cellWidth, m_cellHeight);
+        const TerminalCell &cursorCell = m_emulator.cellAt(cursor.y(), cursor.x());
         painter.fillRect(cursorRect, m_theme.cursor);
-        const QString cursorChar = m_emulator.cellAt(cursor.y(), cursor.x()).character;
+        QFont cursorFont = m_theme.font;
+        cursorFont.setBold(cursorCell.bold);
+        cursorFont.setItalic(cursorCell.italic);
+        cursorFont.setUnderline(cursorCell.underline);
+        cursorFont.setStrikeOut(cursorCell.strikethrough);
+        const QString cursorChar = cursorCell.character;
         painter.setPen(m_theme.background);
-        painter.setFont(m_theme.font);
+        painter.setFont(cursorFont);
         painter.drawText(cursorRect.x(), cursorRect.y() + m_ascent, cursorChar.isEmpty() ? QStringLiteral(" ") : cursorChar);
     }
 }
@@ -644,12 +688,14 @@ void TerminalWidget::focusOutEvent(QFocusEvent *event)
 
 void TerminalWidget::recalculateGrid()
 {
-    QFontMetrics metrics(m_theme.font);
-    const int advanceM = metrics.horizontalAdvance(QStringLiteral("M"));
-    const int advanceW = metrics.horizontalAdvance(QStringLiteral("W"));
-    m_cellWidth = std::max({1, metrics.averageCharWidth(), advanceM, advanceW});
-    m_cellHeight = std::max(1, metrics.height());
-    m_ascent = metrics.ascent();
+    QFontMetricsF metrics(m_theme.font);
+    const qreal advanceM = metrics.horizontalAdvance(QStringLiteral("M"));
+    const qreal advanceW = metrics.horizontalAdvance(QStringLiteral("W"));
+    const qreal advanceZero = metrics.horizontalAdvance(QStringLiteral("0"));
+    const qreal maxAdvance = std::max({advanceM, advanceW, advanceZero});
+    m_cellWidth = std::max(1, static_cast<int>(std::ceil(maxAdvance)));
+    m_cellHeight = std::max(1, static_cast<int>(std::ceil(metrics.height())));
+    m_ascent = std::max(1, static_cast<int>(std::lround(metrics.ascent())));
 
     const int rows = std::max(1, viewport()->height() / m_cellHeight);
     const int cols = std::max(1, viewport()->width() / m_cellWidth);
