@@ -17,6 +17,15 @@ bool isFinalCsiByte(unsigned char ch)
     return ch >= 0x40 && ch <= 0x7e;
 }
 
+constexpr bool defaultLineFeedNewLineMode()
+{
+#if defined(Q_OS_WIN)
+    return true;
+#else
+    return false;
+#endif
+}
+
 } // namespace
 
 TerminalEmulator::TerminalEmulator(int rows, int cols)
@@ -84,6 +93,7 @@ void TerminalEmulator::reset()
     m_synchronizedOutputMode = false;
     m_autoWrapMode = true;
     m_insertMode = false;
+    m_lineFeedNewLineMode = defaultLineFeedNewLineMode();
     m_inAltBuffer = false;
     resetScrollRegion();
     m_parserState = ParserState::Ground;
@@ -314,11 +324,17 @@ void TerminalEmulator::feedByte(unsigned char ch)
         if (ch == '\n') {
             flushIncompleteUtf8();
             newline();
+            if (m_lineFeedNewLineMode) {
+                m_cursorCol = 0;
+            }
             return;
         }
         if (ch == '\v') {
             flushIncompleteUtf8();
             newline();
+            if (m_lineFeedNewLineMode) {
+                m_cursorCol = 0;
+            }
             return;
         }
         if (ch == '\r') {
@@ -1327,6 +1343,8 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         for (int mode : parsed) {
             if (mode == 4) {
                 m_insertMode = enabled;
+            } else if (mode == 20) {
+                m_lineFeedNewLineMode = enabled;
             }
         }
         return;
@@ -1465,6 +1483,7 @@ void TerminalEmulator::softReset()
     m_cursorVisible = true;
     m_applicationCursorKeys = false;
     m_insertMode = false;
+    m_lineFeedNewLineMode = defaultLineFeedNewLineMode();
     resetScrollRegion();
     m_charsetG0 = Charset::Ascii;
     m_charsetG1 = Charset::Ascii;
