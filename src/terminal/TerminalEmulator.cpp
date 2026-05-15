@@ -1354,6 +1354,12 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         return;
     }
 
+    // Ignore unsupported private-prefixed CSI commands so they cannot alias to standard handlers.
+    // Example: CSI > 4 ; 2 m (xterm modifyOtherKeys) must not be parsed as SGR.
+    if (prefix != '\0' && !(prefix == '?' && finalChar == 'n') && !(prefix == '>' && (finalChar == 'c' || finalChar == 'n'))) {
+        return;
+    }
+
     switch (finalChar) {
     case 'A':
         moveCursor(m_cursorRow - effectiveParam(parsed, 0, 1), m_cursorCol);
