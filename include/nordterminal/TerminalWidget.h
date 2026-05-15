@@ -54,6 +54,8 @@ private:
     [[nodiscard]] QString lineTextAtAbsolute(int absoluteLine) const;
     [[nodiscard]] QString selectedText() const;
     void maybeSendMouseReport(QMouseEvent *event, bool release);
+    void paintEmulatorRows(QPainter &painter, int firstRow, int lastRow, int rows, int cols);
+    void paintCursor(QPainter &painter);
 
     TerminalTheme m_theme = TerminalTheme::nordDark();
     TerminalEmulator m_emulator;

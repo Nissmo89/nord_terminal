@@ -267,6 +267,8 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
     painter.setFont(m_theme.font);
 
     const QRect dirtyRect = event ? event->rect() : viewport()->rect();
+    
+    // Always fill the entire dirty rect with background first to prevent artifacts
     painter.fillRect(dirtyRect, m_theme.background);
 
     const int rows = m_emulator.rows();
@@ -277,6 +279,19 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
 
     const int scrollbackSize = m_scrollback.size();
     const int totalLineCount = scrollbackSize + rows;
+    
+    // Bounds check: if scrollback is empty and we're at top, ensure clean state
+    if (scrollbackSize == 0 && m_scrollOffset == 0) {
+        // Paint only emulator rows, no scrollback
+        const int firstRow = std::clamp(dirtyRect.top() / std::max(1, m_cellHeight), 0, rows - 1);
+        const int lastRow = std::clamp(dirtyRect.bottom() / std::max(1, m_cellHeight), 0, rows - 1);
+        
+        paintEmulatorRows(painter, firstRow, lastRow, rows, cols);
+        paintCursor(painter);
+        return;
+    }
+    
+    // Normal path with scrollback
     const int startLine = std::clamp(totalLineCount - rows - m_scrollOffset, 0, std::max(0, totalLineCount - rows));
     const int firstRow = std::clamp(dirtyRect.top() / std::max(1, m_cellHeight), 0, rows - 1);
     const int lastRow = std::clamp(dirtyRect.bottom() / std::max(1, m_cellHeight), 0, rows - 1);
@@ -314,6 +329,13 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
     for (int row = firstRow; row <= lastRow; ++row) {
         const int absoluteLine = startLine + row;
         const int y = row * m_cellHeight;
+        
+        // Bounds check: ensure absoluteLine is valid
+        if (absoluteLine < 0 || absoluteLine >= totalLineCount) {
+            // Fill this row with background and continue
+            painter.fillRect(0, y, viewport()->width(), m_cellHeight, m_theme.background);
+            continue;
+        }
 
         int selectedStartCol = -1;
         int selectedEndCol = -1;
@@ -429,8 +451,16 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         }
 
         const int emulatorRow = absoluteLine - scrollbackSize;
+        
+        // Bounds check: ensure emulatorRow is valid
+        if (emulatorRow < 0 || emulatorRow >= rows) {
+            painter.fillRect(0, y, viewport()->width(), m_cellHeight, m_theme.background);
+            continue;
+        }
+        
         const TerminalCell *rowCells = m_emulator.rowData(emulatorRow);
         if (!rowCells) {
+            painter.fillRect(0, y, viewport()->width(), m_cellHeight, m_theme.background);
             continue;
         }
 
@@ -519,6 +549,83 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         }
     }
 
+    paintCursor(painter);
+}
+
+void TerminalWidget::paintEmulatorRows(QPainter &painter, int firstRow, int lastRow, int rows, int cols)
+{
+    const QString spaceGlyph = QStringLiteral(" ");
+    const TerminalCell emptyCell {};
+    QFont styledFont = m_fontRegular;
+    bool fontInitialized = false;
+    bool lastBold = false;
+    bool lastItalic = false;
+    bool lastUnderline = false;
+    bool lastStrike = false;
+    
+    for (int row = firstRow; row <= lastRow; ++row) {
+        if (row < 0 || row >= rows) {
+            continue;
+        }
+        
+        const int y = row * m_cellHeight;
+        const TerminalCell *rowCells = m_emulator.rowData(row);
+        
+        if (!rowCells) {
+            painter.fillRect(0, y, viewport()->width(), m_cellHeight, m_theme.background);
+            continue;
+        }
+        
+        // Pass 1: backgrounds
+        for (int col = 0; col < cols; ++col) {
+            const TerminalCell &cell = rowCells[static_cast<std::size_t>(col)];
+            QColor background = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
+            if (cell.inverse) {
+                background = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
+            }
+            const int widthCells = (cell.wide && col + 1 < cols) ? 2 : 1;
+            const int x = col * m_cellWidth;
+            painter.fillRect(x, y, m_cellWidth * widthCells, m_cellHeight, background);
+        }
+        
+        // Pass 2: glyphs
+        for (int col = 0; col < cols;) {
+            const TerminalCell &cell = rowCells[static_cast<std::size_t>(col)];
+            if (cell.wideContinuation || cell.character.isEmpty() || cell.character == spaceGlyph) {
+                ++col;
+                continue;
+            }
+            
+            QColor foreground = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
+            if (cell.inverse) {
+                foreground = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
+            }
+            if (cell.dim) {
+                foreground.setAlphaF(0.7);
+            }
+            
+            if (!fontInitialized || cell.bold != lastBold || cell.italic != lastItalic
+                || cell.underline != lastUnderline || cell.strikethrough != lastStrike) {
+                styledFont = cachedFont(cell.bold, cell.italic);
+                styledFont.setUnderline(cell.underline);
+                styledFont.setStrikeOut(cell.strikethrough);
+                painter.setFont(styledFont);
+                fontInitialized = true;
+                lastBold = cell.bold;
+                lastItalic = cell.italic;
+                lastUnderline = cell.underline;
+                lastStrike = cell.strikethrough;
+            }
+            
+            painter.setPen(foreground);
+            painter.drawText(col * m_cellWidth, y + m_ascent, cell.character);
+            col += cell.wide ? 2 : 1;
+        }
+    }
+}
+
+void TerminalWidget::paintCursor(QPainter &painter)
+{
     if (hasFocus() && m_scrollOffset == 0 && m_emulator.cursorVisible() && m_cursorBlinkVisible) {
         const QPoint cursor = m_emulator.cursorPosition();
         const QRect cursorRect(cursor.x() * m_cellWidth, cursor.y() * m_cellHeight, m_cellWidth, m_cellHeight);
