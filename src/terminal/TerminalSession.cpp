@@ -409,8 +409,8 @@ bool TerminalSession::start(const TerminalProfile &profile)
     ::SetHandleInformation(conPty->ptyOutputRead, HANDLE_FLAG_INHERIT, 0);
 
     const COORD initialSize {
-        static_cast<SHORT>(80),
-        static_cast<SHORT>(24),
+        static_cast<SHORT>(std::clamp(m_requestedCols, 1, 32767)),
+        static_cast<SHORT>(std::clamp(m_requestedRows, 1, 32767)),
     };
     const HRESULT createConPtyHr =
         conPty->createPseudoConsole(initialSize, conPty->ptyInputRead, conPty->ptyOutputWrite, 0, &conPty->pseudoConsole);
@@ -714,13 +714,16 @@ void TerminalSession::writeInput(const QByteArray &data)
 
 void TerminalSession::resizePty(int rows, int cols)
 {
+    m_requestedRows = std::max(1, rows);
+    m_requestedCols = std::max(1, cols);
+
 #if defined(Q_OS_UNIX)
     if (m_masterFd < 0) {
         return;
     }
     struct winsize ws {};
-    ws.ws_row = static_cast<unsigned short>(std::max(1, rows));
-    ws.ws_col = static_cast<unsigned short>(std::max(1, cols));
+    ws.ws_row = static_cast<unsigned short>(m_requestedRows);
+    ws.ws_col = static_cast<unsigned short>(m_requestedCols);
     ws.ws_xpixel = 0;
     ws.ws_ypixel = 0;
     ::ioctl(m_masterFd, TIOCSWINSZ, &ws);
@@ -729,8 +732,8 @@ void TerminalSession::resizePty(int rows, int cols)
         return;
     }
     const COORD newSize {
-        static_cast<SHORT>(std::clamp(cols, 1, 32767)),
-        static_cast<SHORT>(std::clamp(rows, 1, 32767)),
+        static_cast<SHORT>(std::clamp(m_requestedCols, 1, 32767)),
+        static_cast<SHORT>(std::clamp(m_requestedRows, 1, 32767)),
     };
     const HRESULT hr = m_conPty->resizePseudoConsole(m_conPty->pseudoConsole, newSize);
     if (FAILED(hr)) {

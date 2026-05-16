@@ -867,6 +867,11 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
         }
     }
 
+    clearWideCellAt(m_cursorRow, m_cursorCol);
+    if (charWidth == 2) {
+        clearWideCellAt(m_cursorRow, m_cursorCol + 1);
+    }
+
     TerminalCell cell;
     const char32_t scalar = codepoint;
     cell.character = QString::fromUcs4(&scalar, 1);
@@ -894,6 +899,7 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
         for (int col = m_cursorCol; col < m_cursorCol + shift && col < m_cols; ++col) {
             cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
         }
+        sanitizeWideRow(m_cursorRow);
     }
 
     cells[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol))] = cell;
@@ -1150,6 +1156,8 @@ void TerminalEmulator::clearLine(int row, int startCol, int endCol)
     if (from > to) {
         return;
     }
+    clearWideCellAt(row, from);
+    clearWideCellAt(row, to);
     const TerminalCell eraseCell = makeEraseCell();
     auto &cells = activeCells();
     for (int col = from; col <= to; ++col) {
@@ -1221,6 +1229,7 @@ void TerminalEmulator::insertBlankChars(int count)
     if (count <= 0 || m_cursorRow < 0 || m_cursorRow >= m_rows || m_cursorCol >= m_cols) {
         return;
     }
+    clearWideCellAt(m_cursorRow, m_cursorCol);
     const int n = std::clamp(count, 1, m_cols - m_cursorCol);
     auto &cells = activeCells();
     for (int col = m_cols - 1; col >= m_cursorCol + n; --col) {
@@ -1230,6 +1239,7 @@ void TerminalEmulator::insertBlankChars(int count)
     for (int col = m_cursorCol; col < m_cursorCol + n; ++col) {
         cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
     }
+    sanitizeWideRow(m_cursorRow);
     markDirtyRow(m_cursorRow);
 }
 
@@ -1238,6 +1248,7 @@ void TerminalEmulator::deleteChars(int count)
     if (count <= 0 || m_cursorRow < 0 || m_cursorRow >= m_rows || m_cursorCol >= m_cols) {
         return;
     }
+    clearWideCellAt(m_cursorRow, m_cursorCol);
     const int n = std::clamp(count, 1, m_cols - m_cursorCol);
     auto &cells = activeCells();
     for (int col = m_cursorCol; col + n < m_cols; ++col) {
@@ -1247,6 +1258,7 @@ void TerminalEmulator::deleteChars(int count)
     for (int col = m_cols - n; col < m_cols; ++col) {
         cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
     }
+    sanitizeWideRow(m_cursorRow);
     markDirtyRow(m_cursorRow);
 }
 
@@ -1261,6 +1273,8 @@ void TerminalEmulator::eraseChars(int count)
     for (int col = m_cursorCol; col < m_cursorCol + n; ++col) {
         cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
     }
+    clearWideCellAt(m_cursorRow, m_cursorCol);
+    clearWideCellAt(m_cursorRow, m_cursorCol + n - 1);
     markDirtyRow(m_cursorRow);
 }
 
@@ -1790,6 +1804,63 @@ void TerminalEmulator::recordViewportScroll(int lines)
         return;
     }
     m_pendingViewportScrollLines = std::clamp(m_pendingViewportScrollLines + lines, -m_rows, m_rows);
+}
+
+void TerminalEmulator::clearWideCellAt(int row, int col)
+{
+    if (row < 0 || row >= m_rows || col < 0 || col >= m_cols) {
+        return;
+    }
+
+    auto &cells = activeCells();
+    const TerminalCell eraseCell = makeEraseCell();
+    TerminalCell &cell = cells[static_cast<std::size_t>(index(row, col))];
+    if (cell.wide) {
+        cell = eraseCell;
+        if (col + 1 < m_cols) {
+            cells[static_cast<std::size_t>(index(row, col + 1))] = eraseCell;
+        }
+        return;
+    }
+    if (!cell.wideContinuation) {
+        return;
+    }
+
+    cell = eraseCell;
+    if (col > 0) {
+        TerminalCell &left = cells[static_cast<std::size_t>(index(row, col - 1))];
+        if (left.wide) {
+            left = eraseCell;
+        }
+    }
+}
+
+void TerminalEmulator::sanitizeWideRow(int row)
+{
+    if (row < 0 || row >= m_rows) {
+        return;
+    }
+
+    auto &cells = activeCells();
+    const TerminalCell eraseCell = makeEraseCell();
+    for (int col = 0; col < m_cols; ++col) {
+        TerminalCell &cell = cells[static_cast<std::size_t>(index(row, col))];
+        if (cell.wide) {
+            const bool hasContinuation =
+                (col + 1 < m_cols) && cells[static_cast<std::size_t>(index(row, col + 1))].wideContinuation;
+            if (!hasContinuation) {
+                cell = eraseCell;
+            }
+            continue;
+        }
+        if (!cell.wideContinuation) {
+            continue;
+        }
+        const bool hasLeadingWide = (col > 0) && cells[static_cast<std::size_t>(index(row, col - 1))].wide;
+        if (!hasLeadingWide) {
+            cell = eraseCell;
+        }
+    }
 }
 
 void TerminalEmulator::moveCursor(int row, int col)

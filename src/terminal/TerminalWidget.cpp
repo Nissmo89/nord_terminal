@@ -257,6 +257,9 @@ TerminalWidget::TerminalWidget(QWidget *parent)
         m_scrollOffset = verticalScrollBar()->maximum() - value;
         viewport()->update();
     });
+    connect(verticalScrollBar(), &QScrollBar::rangeChanged, this, [this](int, int) {
+        m_scrollOffset = verticalScrollBar()->maximum() - verticalScrollBar()->value();
+    });
 
     m_cursorBlinkTimer.setInterval(500);
     connect(&m_cursorBlinkTimer, &QTimer::timeout, this, [this]() {
@@ -321,6 +324,7 @@ bool TerminalWidget::startShell(const TerminalProfile &profile)
     m_wheelRemainder = 0;
     resetCursorBlink();
 
+    m_session.resizePty(m_emulator.rows(), m_emulator.cols());
     const bool started = m_session.start(profile);
     if (started) {
         m_session.resizePty(m_emulator.rows(), m_emulator.cols());
@@ -891,6 +895,18 @@ void TerminalWidget::flushPendingSessionOutput()
         return;
     }
 
+    auto schedulePendingFlush = [this]() {
+        if (m_pendingSessionOutput.isEmpty() || m_outputFlushQueued) {
+            return;
+        }
+        m_outputFlushQueued = true;
+        const int flushDelayMs = outputFlushDelayMs(m_pendingSessionOutput.size());
+        QTimer::singleShot(flushDelayMs, this, [this]() {
+            m_outputFlushQueued = false;
+            flushPendingSessionOutput();
+        });
+    };
+
     const bool stickToBottom = (verticalScrollBar()->value() == verticalScrollBar()->maximum());
     const QPoint oldCursor = m_emulator.cursorPosition();
     const bool oldCursorVisible = m_emulator.cursorVisible();
@@ -957,10 +973,15 @@ void TerminalWidget::flushPendingSessionOutput()
     }
 
     if (scrollbackCleared) {
-        hasDirtyRows = true;
-        dirtyTopRow = 0;
-        dirtyBottomRow = std::max(0, m_emulator.rows() - 1);
+        m_wheelRemainder = 0;
+        m_scrollOffset = 0;
+        verticalScrollBar()->setValue(verticalScrollBar()->maximum());
         traceLog(QStringLiteral("scrollback cleared by emulator"));
+        resetCursorBlink();
+        viewport()->update();
+        traceViewportSnapshot(QStringLiteral("post-flush"));
+        schedulePendingFlush();
+        return;
     }
 
     resetCursorBlink();
@@ -1001,15 +1022,7 @@ void TerminalWidget::flushPendingSessionOutput()
                  .arg(stickToBottom ? 1 : 0)
                  .arg(m_scrollOffset));
     traceViewportSnapshot(QStringLiteral("post-flush"));
-
-    if (!m_pendingSessionOutput.isEmpty() && !m_outputFlushQueued) {
-        m_outputFlushQueued = true;
-        const int flushDelayMs = outputFlushDelayMs(m_pendingSessionOutput.size());
-        QTimer::singleShot(flushDelayMs, this, [this]() {
-            m_outputFlushQueued = false;
-            flushPendingSessionOutput();
-        });
-    }
+    schedulePendingFlush();
 }
 
 void TerminalWidget::initializeTraceLogging()

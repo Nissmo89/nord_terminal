@@ -55,6 +55,8 @@ private:
     struct ConPtyState;
     ConPtyState *m_conPty = nullptr;
 #endif
+    int m_requestedRows = 24;
+    int m_requestedCols = 80;
     std::atomic_uint64_t m_generation {0};
     TerminalProfile m_profile;
 };

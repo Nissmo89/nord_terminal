@@ -9,7 +9,7 @@
       "source_file": "src/terminal/TerminalTheme.cpp",
       "source_location": "L1",
       "id": "src_terminal_terminaltheme_cpp",
-      "community": 10,
+      "community": 9,
       "norm_label": "terminaltheme.cpp"
     },
     {
@@ -18,7 +18,7 @@
       "source_file": "src/terminal/TerminalTheme.cpp",
       "source_location": "L8",
       "id": "terminal_terminaltheme_defaultterminalfont",
-      "community": 10,
+      "community": 9,
       "norm_label": "defaultterminalfont()"
     },
     {
@@ -27,7 +27,7 @@
       "source_file": "src/terminal/TerminalTheme.cpp",
       "source_location": "L20",
       "id": "terminal_terminaltheme_resolveforeground",
-      "community": 10,
+      "community": 9,
       "norm_label": "resolveforeground()"
     },
     {
@@ -36,7 +36,7 @@
       "source_file": "src/terminal/TerminalTheme.cpp",
       "source_location": "L32",
       "id": "terminal_terminaltheme_resolvebackground",
-      "community": 10,
+      "community": 9,
       "norm_label": "resolvebackground()"
     },
     {
@@ -45,7 +45,7 @@
       "source_file": "src/terminal/TerminalTheme.cpp",
       "source_location": "L44",
       "id": "terminal_terminaltheme_norddark",
-      "community": 10,
+      "community": 9,
       "norm_label": "norddark()"
     },
     {
@@ -106,7 +106,7 @@
       "label": "defaultForHost()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalProfile.cpp",
-      "source_location": "L9",
+      "source_location": "L10",
       "id": "terminal_terminalprofile_defaultforhost",
       "community": 13,
       "norm_label": "defaultforhost()"
@@ -144,7 +144,7 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L15",
       "id": "terminal_terminalemulator_isfinalcsibyte",
-      "community": 4,
+      "community": 6,
       "norm_label": "isfinalcsibyte()"
     },
     {
@@ -153,50 +153,59 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L20",
       "id": "terminal_terminalemulator_defaultlinefeednewlinemode",
-      "community": 5,
+      "community": 4,
       "norm_label": "defaultlinefeednewlinemode()"
+    },
+    {
+      "label": "lineHasVisibleGlyph()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L25",
+      "id": "terminal_terminalemulator_linehasvisibleglyph",
+      "community": 3,
+      "norm_label": "linehasvisibleglyph()"
     },
     {
       "label": "TerminalEmulator()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L31",
+      "source_location": "L42",
       "id": "terminal_terminalemulator_terminalemulator",
-      "community": 5,
+      "community": 4,
       "norm_label": "terminalemulator()"
     },
     {
       "label": "resize()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L41",
+      "source_location": "L52",
       "id": "terminal_terminalemulator_resize",
-      "community": 5,
+      "community": 4,
       "norm_label": "resize()"
     },
     {
       "label": "reset()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L78",
+      "source_location": "L89",
       "id": "terminal_terminalemulator_reset",
-      "community": 5,
+      "community": 4,
       "norm_label": "reset()"
     },
     {
       "label": "feedOutput()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L116",
+      "source_location": "L129",
       "id": "terminal_terminalemulator_feedoutput",
-      "community": 7,
+      "community": 10,
       "norm_label": "feedoutput()"
     },
     {
       "label": "takePendingResponse()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L123",
+      "source_location": "L136",
       "id": "terminal_terminalemulator_takependingresponse",
       "community": 2,
       "norm_label": "takependingresponse()"
@@ -205,7 +214,7 @@
       "label": "rows()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L130",
+      "source_location": "L143",
       "id": "terminal_terminalemulator_rows",
       "community": 2,
       "norm_label": "rows()"
@@ -214,7 +223,7 @@
       "label": "cols()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L135",
+      "source_location": "L148",
       "id": "terminal_terminalemulator_cols",
       "community": 2,
       "norm_label": "cols()"
@@ -223,7 +232,7 @@
       "label": "cursorPosition()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L140",
+      "source_location": "L153",
       "id": "terminal_terminalemulator_cursorposition",
       "community": 2,
       "norm_label": "cursorposition()"
@@ -232,7 +241,7 @@
       "label": "cursorVisible()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L145",
+      "source_location": "L158",
       "id": "terminal_terminalemulator_cursorvisible",
       "community": 2,
       "norm_label": "cursorvisible()"
@@ -241,7 +250,7 @@
       "label": "applicationCursorKeys()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L150",
+      "source_location": "L163",
       "id": "terminal_terminalemulator_applicationcursorkeys",
       "community": 2,
       "norm_label": "applicationcursorkeys()"
@@ -250,7 +259,7 @@
       "label": "bracketedPasteMode()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L155",
+      "source_location": "L168",
       "id": "terminal_terminalemulator_bracketedpastemode",
       "community": 2,
       "norm_label": "bracketedpastemode()"
@@ -259,7 +268,7 @@
       "label": "mouseTrackingEnabled()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L160",
+      "source_location": "L173",
       "id": "terminal_terminalemulator_mousetrackingenabled",
       "community": 2,
       "norm_label": "mousetrackingenabled()"
@@ -268,7 +277,7 @@
       "label": "mouseButtonTrackingEnabled()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L165",
+      "source_location": "L178",
       "id": "terminal_terminalemulator_mousebuttontrackingenabled",
       "community": 2,
       "norm_label": "mousebuttontrackingenabled()"
@@ -277,7 +286,7 @@
       "label": "mouseAnyTrackingEnabled()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L170",
+      "source_location": "L183",
       "id": "terminal_terminalemulator_mouseanytrackingenabled",
       "community": 2,
       "norm_label": "mouseanytrackingenabled()"
@@ -286,7 +295,7 @@
       "label": "mouseSgrMode()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L175",
+      "source_location": "L188",
       "id": "terminal_terminalemulator_mousesgrmode",
       "community": 2,
       "norm_label": "mousesgrmode()"
@@ -295,7 +304,7 @@
       "label": "rowData()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L189",
+      "source_location": "L202",
       "id": "terminal_terminalemulator_rowdata",
       "community": 3,
       "norm_label": "rowdata()"
@@ -304,16 +313,16 @@
       "label": "lineText()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L197",
+      "source_location": "L210",
       "id": "terminal_terminalemulator_linetext",
-      "community": 7,
+      "community": 2,
       "norm_label": "linetext()"
     },
     {
       "label": "takeScrolledLines()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L216",
+      "source_location": "L229",
       "id": "terminal_terminalemulator_takescrolledlines",
       "community": 2,
       "norm_label": "takescrolledlines()"
@@ -322,7 +331,7 @@
       "label": "takeScrollbackClearRequested()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L223",
+      "source_location": "L236",
       "id": "terminal_terminalemulator_takescrollbackclearrequested",
       "community": 2,
       "norm_label": "takescrollbackclearrequested()"
@@ -331,7 +340,7 @@
       "label": "takeDirtyRowSpan()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L230",
+      "source_location": "L243",
       "id": "terminal_terminalemulator_takedirtyrowspan",
       "community": 2,
       "norm_label": "takedirtyrowspan()"
@@ -340,7 +349,7 @@
       "label": "takePendingViewportScrollLines()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L246",
+      "source_location": "L259",
       "id": "terminal_terminalemulator_takependingviewportscrolllines",
       "community": 2,
       "norm_label": "takependingviewportscrolllines()"
@@ -349,97 +358,97 @@
       "label": "feedByte()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L253",
+      "source_location": "L266",
       "id": "terminal_terminalemulator_feedbyte",
-      "community": 4,
+      "community": 6,
       "norm_label": "feedbyte()"
     },
     {
       "label": "feedUtf8Byte()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L573",
+      "source_location": "L586",
       "id": "terminal_terminalemulator_feedutf8byte",
-      "community": 4,
+      "community": 6,
       "norm_label": "feedutf8byte()"
     },
     {
       "label": "flushIncompleteUtf8()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L632",
+      "source_location": "L645",
       "id": "terminal_terminalemulator_flushincompleteutf8",
-      "community": 4,
+      "community": 6,
       "norm_label": "flushincompleteutf8()"
     },
     {
       "label": "ansi256ToColor()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L642",
+      "source_location": "L655",
       "id": "terminal_terminalemulator_ansi256tocolor",
-      "community": 7,
+      "community": 10,
       "norm_label": "ansi256tocolor()"
     },
     {
       "label": "mapDecSpecialGraphicsChar()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L672",
+      "source_location": "L685",
       "id": "terminal_terminalemulator_mapdecspecialgraphicschar",
-      "community": 4,
+      "community": 6,
       "norm_label": "mapdecspecialgraphicschar()"
     },
     {
       "label": "codepointDisplayWidth()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L744",
+      "source_location": "L757",
       "id": "terminal_terminalemulator_codepointdisplaywidth",
-      "community": 4,
+      "community": 2,
       "norm_label": "codepointdisplaywidth()"
     },
     {
       "label": "activeCharset()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L777",
+      "source_location": "L790",
       "id": "terminal_terminalemulator_activecharset",
-      "community": 4,
+      "community": 6,
       "norm_label": "activecharset()"
     },
     {
       "label": "handleEscapeIntermediateFinal()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L782",
+      "source_location": "L795",
       "id": "terminal_terminalemulator_handleescapeintermediatefinal",
-      "community": 4,
+      "community": 6,
       "norm_label": "handleescapeintermediatefinal()"
     },
     {
       "label": "putCodepoint()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L805",
+      "source_location": "L818",
       "id": "terminal_terminalemulator_putcodepoint",
-      "community": 4,
+      "community": 5,
       "norm_label": "putcodepoint()"
     },
     {
       "label": "makeEraseCell()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L874",
+      "source_location": "L922",
       "id": "terminal_terminalemulator_makeerasecell",
-      "community": 6,
+      "community": 5,
       "norm_label": "makeerasecell()"
     },
     {
       "label": "scrollUp()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L895",
+      "source_location": "L943",
       "id": "terminal_terminalemulator_scrollup",
       "community": 3,
       "norm_label": "scrollup()"
@@ -448,7 +457,7 @@
       "label": "scrollDown()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L933",
+      "source_location": "L984",
       "id": "terminal_terminalemulator_scrolldown",
       "community": 3,
       "norm_label": "scrolldown()"
@@ -457,88 +466,79 @@
       "label": "newline()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L957",
+      "source_location": "L1008",
       "id": "terminal_terminalemulator_newline",
-      "community": 7,
+      "community": 10,
       "norm_label": "newline()"
     },
     {
       "label": "applySgr()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L966",
+      "source_location": "L1017",
       "id": "terminal_terminalemulator_applysgr",
-      "community": 7,
+      "community": 10,
       "norm_label": "applysgr()"
-    },
-    {
-      "label": "clearScreen()",
-      "file_type": "code",
-      "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1098",
-      "id": "terminal_terminalemulator_clearscreen",
-      "community": 5,
-      "norm_label": "clearscreen()"
     },
     {
       "label": "clearLine()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1108",
+      "source_location": "L1149",
       "id": "terminal_terminalemulator_clearline",
-      "community": 6,
+      "community": 5,
       "norm_label": "clearline()"
     },
     {
       "label": "eraseInDisplay()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1126",
+      "source_location": "L1169",
       "id": "terminal_terminalemulator_eraseindisplay",
-      "community": 6,
+      "community": 4,
       "norm_label": "eraseindisplay()"
     },
     {
       "label": "eraseInLine()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1156",
+      "source_location": "L1214",
       "id": "terminal_terminalemulator_eraseinline",
-      "community": 6,
+      "community": 3,
       "norm_label": "eraseinline()"
     },
     {
       "label": "insertBlankChars()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1169",
+      "source_location": "L1227",
       "id": "terminal_terminalemulator_insertblankchars",
-      "community": 6,
+      "community": 5,
       "norm_label": "insertblankchars()"
     },
     {
       "label": "deleteChars()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1186",
+      "source_location": "L1246",
       "id": "terminal_terminalemulator_deletechars",
-      "community": 6,
+      "community": 5,
       "norm_label": "deletechars()"
     },
     {
       "label": "eraseChars()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1203",
+      "source_location": "L1265",
       "id": "terminal_terminalemulator_erasechars",
-      "community": 6,
+      "community": 5,
       "norm_label": "erasechars()"
     },
     {
       "label": "insertLines()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1217",
+      "source_location": "L1281",
       "id": "terminal_terminalemulator_insertlines",
       "community": 3,
       "norm_label": "insertlines()"
@@ -547,7 +547,7 @@
       "label": "deleteLines()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1232",
+      "source_location": "L1296",
       "id": "terminal_terminalemulator_deletelines",
       "community": 3,
       "norm_label": "deletelines()"
@@ -556,7 +556,7 @@
       "label": "tryHandleDecrqm()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1247",
+      "source_location": "L1311",
       "id": "terminal_terminalemulator_tryhandledecrqm",
       "community": 3,
       "norm_label": "tryhandledecrqm()"
@@ -565,7 +565,7 @@
       "label": "handleCsi()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1303",
+      "source_location": "L1370",
       "id": "terminal_terminalemulator_handlecsi",
       "community": 3,
       "norm_label": "handlecsi()"
@@ -574,43 +574,43 @@
       "label": "softReset()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1479",
+      "source_location": "L1564",
       "id": "terminal_terminalemulator_softreset",
-      "community": 5,
+      "community": 4,
       "norm_label": "softreset()"
     },
     {
       "label": "handleOsc()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1498",
+      "source_location": "L1584",
       "id": "terminal_terminalemulator_handleosc",
-      "community": 4,
+      "community": 6,
       "norm_label": "handleosc()"
     },
     {
       "label": "setPrivateMode()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1525",
+      "source_location": "L1611",
       "id": "terminal_terminalemulator_setprivatemode",
-      "community": 5,
+      "community": 4,
       "norm_label": "setprivatemode()"
     },
     {
       "label": "resetScrollRegion()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1611",
+      "source_location": "L1705",
       "id": "terminal_terminalemulator_resetscrollregion",
-      "community": 5,
+      "community": 4,
       "norm_label": "resetscrollregion()"
     },
     {
       "label": "setScrollRegion()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1617",
+      "source_location": "L1711",
       "id": "terminal_terminalemulator_setscrollregion",
       "community": 3,
       "norm_label": "setscrollregion()"
@@ -619,7 +619,7 @@
       "label": "parseCsiParameters()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1628",
+      "source_location": "L1722",
       "id": "terminal_terminalemulator_parsecsiparameters",
       "community": 3,
       "norm_label": "parsecsiparameters()"
@@ -628,7 +628,7 @@
       "label": "effectiveParam()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1655",
+      "source_location": "L1749",
       "id": "terminal_terminalemulator_effectiveparam",
       "community": 3,
       "norm_label": "effectiveparam()"
@@ -637,54 +637,72 @@
       "label": "markDirtyAll()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1673",
+      "source_location": "L1767",
       "id": "terminal_terminalemulator_markdirtyall",
-      "community": 5,
+      "community": 4,
       "norm_label": "markdirtyall()"
     },
     {
       "label": "markDirtyRow()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1680",
+      "source_location": "L1774",
       "id": "terminal_terminalemulator_markdirtyrow",
-      "community": 6,
+      "community": 5,
       "norm_label": "markdirtyrow()"
     },
     {
       "label": "markDirtyRange()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1688",
+      "source_location": "L1782",
       "id": "terminal_terminalemulator_markdirtyrange",
-      "community": 6,
+      "community": 3,
       "norm_label": "markdirtyrange()"
     },
     {
       "label": "recordViewportScroll()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1707",
+      "source_location": "L1801",
       "id": "terminal_terminalemulator_recordviewportscroll",
       "community": 3,
       "norm_label": "recordviewportscroll()"
     },
     {
+      "label": "clearWideCellAt()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1809",
+      "id": "terminal_terminalemulator_clearwidecellat",
+      "community": 5,
+      "norm_label": "clearwidecellat()"
+    },
+    {
+      "label": "sanitizeWideRow()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1838",
+      "id": "terminal_terminalemulator_sanitizewiderow",
+      "community": 5,
+      "norm_label": "sanitizewiderow()"
+    },
+    {
       "label": "moveCursor()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1715",
+      "source_location": "L1866",
       "id": "terminal_terminalemulator_movecursor",
-      "community": 5,
+      "community": 4,
       "norm_label": "movecursor()"
     },
     {
       "label": "index()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1721",
+      "source_location": "L1872",
       "id": "terminal_terminalemulator_index",
-      "community": 6,
+      "community": 5,
       "norm_label": "index()"
     },
     {
@@ -781,7 +799,7 @@
       "label": "isRunning()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L654",
+      "source_location": "L655",
       "id": "terminal_terminalsession_isrunning",
       "community": 1,
       "norm_label": "isrunning()"
@@ -790,7 +808,7 @@
       "label": "writeInput()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L663",
+      "source_location": "L664",
       "id": "terminal_terminalsession_writeinput",
       "community": 1,
       "norm_label": "writeinput()"
@@ -799,7 +817,7 @@
       "label": "resizePty()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L714",
+      "source_location": "L715",
       "id": "terminal_terminalsession_resizepty",
       "community": 1,
       "norm_label": "resizepty()"
@@ -808,7 +826,7 @@
       "label": "terminate()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L741",
+      "source_location": "L745",
       "id": "terminal_terminalsession_terminate",
       "community": 1,
       "norm_label": "terminate()"
@@ -817,7 +835,7 @@
       "label": "terminateWindows()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L765",
+      "source_location": "L769",
       "id": "terminal_terminalsession_terminatewindows",
       "community": 1,
       "norm_label": "terminatewindows()"
@@ -826,7 +844,7 @@
       "label": "activeProfile()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L829",
+      "source_location": "L833",
       "id": "terminal_terminalsession_activeprofile",
       "community": 1,
       "norm_label": "activeprofile()"
@@ -835,7 +853,7 @@
       "label": "onMasterPtyReadyRead()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L835",
+      "source_location": "L839",
       "id": "terminal_terminalsession_onmasterptyreadyread",
       "community": 1,
       "norm_label": "onmasterptyreadyread()"
@@ -844,7 +862,7 @@
       "label": "onMasterPtyWritable()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L884",
+      "source_location": "L888",
       "id": "terminal_terminalsession_onmasterptywritable",
       "community": 1,
       "norm_label": "onmasterptywritable()"
@@ -853,7 +871,7 @@
       "label": "flushPendingWriteBuffer()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L889",
+      "source_location": "L893",
       "id": "terminal_terminalsession_flushpendingwritebuffer",
       "community": 1,
       "norm_label": "flushpendingwritebuffer()"
@@ -862,7 +880,7 @@
       "label": "finalizeChildExit()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L928",
+      "source_location": "L932",
       "id": "terminal_terminalsession_finalizechildexit",
       "community": 1,
       "norm_label": "finalizechildexit()"
@@ -871,7 +889,7 @@
       "label": "onChildExitCheck()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L945",
+      "source_location": "L949",
       "id": "terminal_terminalsession_onchildexitcheck",
       "community": 1,
       "norm_label": "onchildexitcheck()"
@@ -880,7 +898,7 @@
       "label": "closeMasterPty()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalSession.cpp",
-      "source_location": "L979",
+      "source_location": "L983",
       "id": "terminal_terminalsession_closemasterpty",
       "community": 1,
       "norm_label": "closemasterpty()"
@@ -898,34 +916,70 @@
       "label": "scalarFromCodepoint()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L30",
+      "source_location": "L35",
       "id": "terminal_terminalwidget_scalarfromcodepoint",
       "community": 0,
       "norm_label": "scalarfromcodepoint()"
     },
     {
-      "label": "sameTextStyle()",
+      "label": "isTraceEnabledFromEnvironment()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L36",
-      "id": "terminal_terminalwidget_sametextstyle",
+      "source_location": "L158",
+      "id": "terminal_terminalwidget_istraceenabledfromenvironment",
       "community": 0,
-      "norm_label": "sametextstyle()"
+      "norm_label": "istraceenabledfromenvironment()"
     },
     {
-      "label": "withSymbolFallbacks()",
+      "label": "isVerboseTraceRequestedFromEnvironment()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L52",
-      "id": "terminal_terminalwidget_withsymbolfallbacks",
+      "source_location": "L165",
+      "id": "terminal_terminalwidget_isverbosetracerequestedfromenvironment",
       "community": 0,
-      "norm_label": "withsymbolfallbacks()"
+      "norm_label": "isverbosetracerequestedfromenvironment()"
+    },
+    {
+      "label": "outputFlushDelayMs()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L171",
+      "id": "terminal_terminalwidget_outputflushdelayms",
+      "community": 0,
+      "norm_label": "outputflushdelayms()"
+    },
+    {
+      "label": "summaryPathForTraceFile()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L177",
+      "id": "terminal_terminalwidget_summarypathfortracefile",
+      "community": 0,
+      "norm_label": "summarypathfortracefile()"
+    },
+    {
+      "label": "shouldMirrorTraceLineToSummary()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L191",
+      "id": "terminal_terminalwidget_shouldmirrortracelinetosummary",
+      "community": 0,
+      "norm_label": "shouldmirrortracelinetosummary()"
+    },
+    {
+      "label": "escapedBytePreview()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L206",
+      "id": "terminal_terminalwidget_escapedbytepreview",
+      "community": 0,
+      "norm_label": "escapedbytepreview()"
     },
     {
       "label": "TerminalWidget()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L171",
+      "source_location": "L235",
       "id": "terminal_terminalwidget_terminalwidget",
       "community": 0,
       "norm_label": "terminalwidget()"
@@ -934,7 +988,7 @@
       "label": "setTheme()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L213",
+      "source_location": "L287",
       "id": "terminal_terminalwidget_settheme",
       "community": 0,
       "norm_label": "settheme()"
@@ -943,7 +997,7 @@
       "label": "theme()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L223",
+      "source_location": "L297",
       "id": "terminal_terminalwidget_theme",
       "community": 0,
       "norm_label": "theme()"
@@ -952,7 +1006,7 @@
       "label": "loadThemeFromFile()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L228",
+      "source_location": "L302",
       "id": "terminal_terminalwidget_loadthemefromfile",
       "community": 0,
       "norm_label": "loadthemefromfile()"
@@ -961,7 +1015,7 @@
       "label": "startShell()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L238",
+      "source_location": "L312",
       "id": "terminal_terminalwidget_startshell",
       "community": 0,
       "norm_label": "startshell()"
@@ -970,7 +1024,7 @@
       "label": "stopShell()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L259",
+      "source_location": "L340",
       "id": "terminal_terminalwidget_stopshell",
       "community": 0,
       "norm_label": "stopshell()"
@@ -979,7 +1033,7 @@
       "label": "paintEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L264",
+      "source_location": "L346",
       "id": "terminal_terminalwidget_paintevent",
       "community": 0,
       "norm_label": "paintevent()"
@@ -988,7 +1042,7 @@
       "label": "keyPressEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L537",
+      "source_location": "L599",
       "id": "terminal_terminalwidget_keypressevent",
       "community": 0,
       "norm_label": "keypressevent()"
@@ -997,7 +1051,7 @@
       "label": "resizeEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L584",
+      "source_location": "L666",
       "id": "terminal_terminalwidget_resizeevent",
       "community": 0,
       "norm_label": "resizeevent()"
@@ -1006,7 +1060,7 @@
       "label": "focusNextPrevChild()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L590",
+      "source_location": "L672",
       "id": "terminal_terminalwidget_focusnextprevchild",
       "community": 0,
       "norm_label": "focusnextprevchild()"
@@ -1015,7 +1069,7 @@
       "label": "mousePressEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L597",
+      "source_location": "L679",
       "id": "terminal_terminalwidget_mousepressevent",
       "community": 0,
       "norm_label": "mousepressevent()"
@@ -1024,7 +1078,7 @@
       "label": "mouseMoveEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L615",
+      "source_location": "L697",
       "id": "terminal_terminalwidget_mousemoveevent",
       "community": 0,
       "norm_label": "mousemoveevent()"
@@ -1033,7 +1087,7 @@
       "label": "mouseReleaseEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L630",
+      "source_location": "L712",
       "id": "terminal_terminalwidget_mousereleaseevent",
       "community": 0,
       "norm_label": "mousereleaseevent()"
@@ -1042,7 +1096,7 @@
       "label": "wheelEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L641",
+      "source_location": "L723",
       "id": "terminal_terminalwidget_wheelevent",
       "community": 0,
       "norm_label": "wheelevent()"
@@ -1051,7 +1105,7 @@
       "label": "focusInEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L676",
+      "source_location": "L758",
       "id": "terminal_terminalwidget_focusinevent",
       "community": 0,
       "norm_label": "focusinevent()"
@@ -1060,7 +1114,7 @@
       "label": "focusOutEvent()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L688",
+      "source_location": "L770",
       "id": "terminal_terminalwidget_focusoutevent",
       "community": 0,
       "norm_label": "focusoutevent()"
@@ -1069,7 +1123,7 @@
       "label": "recalculateGrid()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L700",
+      "source_location": "L782",
       "id": "terminal_terminalwidget_recalculategrid",
       "community": 0,
       "norm_label": "recalculategrid()"
@@ -1078,7 +1132,7 @@
       "label": "rebuildFontCache()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L722",
+      "source_location": "L835",
       "id": "terminal_terminalwidget_rebuildfontcache",
       "community": 0,
       "norm_label": "rebuildfontcache()"
@@ -1087,7 +1141,7 @@
       "label": "cursorViewportRect()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L742",
+      "source_location": "L855",
       "id": "terminal_terminalwidget_cursorviewportrect",
       "community": 0,
       "norm_label": "cursorviewportrect()"
@@ -1096,7 +1150,7 @@
       "label": "consumeSessionOutput()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L754",
+      "source_location": "L867",
       "id": "terminal_terminalwidget_consumesessionoutput",
       "community": 0,
       "norm_label": "consumesessionoutput()"
@@ -1105,16 +1159,61 @@
       "label": "flushPendingSessionOutput()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L778",
+      "source_location": "L892",
       "id": "terminal_terminalwidget_flushpendingsessionoutput",
       "community": 0,
       "norm_label": "flushpendingsessionoutput()"
     },
     {
+      "label": "initializeTraceLogging()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1028",
+      "id": "terminal_terminalwidget_initializetracelogging",
+      "community": 0,
+      "norm_label": "initializetracelogging()"
+    },
+    {
+      "label": "traceLog()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1087",
+      "id": "terminal_terminalwidget_tracelog",
+      "community": 0,
+      "norm_label": "tracelog()"
+    },
+    {
+      "label": "traceBytes()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1106",
+      "id": "terminal_terminalwidget_tracebytes",
+      "community": 0,
+      "norm_label": "tracebytes()"
+    },
+    {
+      "label": "traceViewportSnapshot()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1125",
+      "id": "terminal_terminalwidget_traceviewportsnapshot",
+      "community": 0,
+      "norm_label": "traceviewportsnapshot()"
+    },
+    {
+      "label": "isVerboseTraceEnabled()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1187",
+      "id": "terminal_terminalwidget_isverbosetraceenabled",
+      "community": 0,
+      "norm_label": "isverbosetraceenabled()"
+    },
+    {
       "label": "resetCursorBlink()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L876",
+      "source_location": "L1192",
       "id": "terminal_terminalwidget_resetcursorblink",
       "community": 0,
       "norm_label": "resetcursorblink()"
@@ -1123,7 +1222,7 @@
       "label": "visibleStartLine()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L881",
+      "source_location": "L1197",
       "id": "terminal_terminalwidget_visiblestartline",
       "community": 0,
       "norm_label": "visiblestartline()"
@@ -1132,7 +1231,7 @@
       "label": "totalLines()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L886",
+      "source_location": "L1202",
       "id": "terminal_terminalwidget_totallines",
       "community": 0,
       "norm_label": "totallines()"
@@ -1141,7 +1240,7 @@
       "label": "toViewportCell()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L891",
+      "source_location": "L1207",
       "id": "terminal_terminalwidget_toviewportcell",
       "community": 0,
       "norm_label": "toviewportcell()"
@@ -1150,7 +1249,7 @@
       "label": "toAbsoluteCell()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L898",
+      "source_location": "L1214",
       "id": "terminal_terminalwidget_toabsolutecell",
       "community": 0,
       "norm_label": "toabsolutecell()"
@@ -1159,7 +1258,7 @@
       "label": "lineTextAtAbsolute()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L904",
+      "source_location": "L1220",
       "id": "terminal_terminalwidget_linetextatabsolute",
       "community": 0,
       "norm_label": "linetextatabsolute()"
@@ -1168,7 +1267,7 @@
       "label": "selectedText()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L915",
+      "source_location": "L1231",
       "id": "terminal_terminalwidget_selectedtext",
       "community": 0,
       "norm_label": "selectedtext()"
@@ -1177,7 +1276,7 @@
       "label": "maybeSendMouseReport()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L959",
+      "source_location": "L1275",
       "id": "terminal_terminalwidget_maybesendmousereport",
       "community": 0,
       "norm_label": "maybesendmousereport()"
@@ -1188,7 +1287,7 @@
       "source_file": "src/terminal/TerminalScrollback.cpp",
       "source_location": "L1",
       "id": "src_terminal_terminalscrollback_cpp",
-      "community": 8,
+      "community": 7,
       "norm_label": "terminalscrollback.cpp"
     },
     {
@@ -1206,7 +1305,7 @@
       "source_file": "src/terminal/TerminalScrollback.cpp",
       "source_location": "L13",
       "id": "terminal_terminalscrollback_pushline",
-      "community": 8,
+      "community": 7,
       "norm_label": "pushline()"
     },
     {
@@ -1215,7 +1314,7 @@
       "source_file": "src/terminal/TerminalScrollback.cpp",
       "source_location": "L29",
       "id": "terminal_terminalscrollback_size",
-      "community": 8,
+      "community": 7,
       "norm_label": "size()"
     },
     {
@@ -1224,7 +1323,7 @@
       "source_file": "src/terminal/TerminalScrollback.cpp",
       "source_location": "L34",
       "id": "terminal_terminalscrollback_maxlines",
-      "community": 8,
+      "community": 7,
       "norm_label": "maxlines()"
     },
     {
@@ -1233,7 +1332,7 @@
       "source_file": "src/terminal/TerminalScrollback.cpp",
       "source_location": "L39",
       "id": "terminal_terminalscrollback_setmaxlines",
-      "community": 8,
+      "community": 7,
       "norm_label": "setmaxlines()"
     },
     {
@@ -1242,7 +1341,7 @@
       "source_file": "src/terminal/TerminalScrollback.cpp",
       "source_location": "L47",
       "id": "terminal_terminalscrollback_slice",
-      "community": 8,
+      "community": 7,
       "norm_label": "slice()"
     },
     {
@@ -1251,7 +1350,7 @@
       "source_file": "src/terminal/TerminalScrollback.cpp",
       "source_location": "L72",
       "id": "terminal_terminalscrollback_linetext",
-      "community": 8,
+      "community": 7,
       "norm_label": "linetext()"
     },
     {
@@ -1260,7 +1359,7 @@
       "source_file": "src/terminal/TerminalSelection.cpp",
       "source_location": "L1",
       "id": "src_terminal_terminalselection_cpp",
-      "community": 9,
+      "community": 8,
       "norm_label": "terminalselection.cpp"
     },
     {
@@ -1269,7 +1368,7 @@
       "source_file": "src/terminal/TerminalSelection.cpp",
       "source_location": "L5",
       "id": "terminal_terminalselection_begin",
-      "community": 9,
+      "community": 8,
       "norm_label": "begin()"
     },
     {
@@ -1278,7 +1377,7 @@
       "source_file": "src/terminal/TerminalSelection.cpp",
       "source_location": "L12",
       "id": "terminal_terminalselection_update",
-      "community": 9,
+      "community": 8,
       "norm_label": "update()"
     },
     {
@@ -1287,7 +1386,7 @@
       "source_file": "src/terminal/TerminalSelection.cpp",
       "source_location": "L20",
       "id": "terminal_terminalselection_clear",
-      "community": 9,
+      "community": 8,
       "norm_label": "clear()"
     },
     {
@@ -1296,7 +1395,7 @@
       "source_file": "src/terminal/TerminalSelection.cpp",
       "source_location": "L27",
       "id": "terminal_terminalselection_isactive",
-      "community": 9,
+      "community": 8,
       "norm_label": "isactive()"
     },
     {
@@ -1305,7 +1404,7 @@
       "source_file": "src/terminal/TerminalSelection.cpp",
       "source_location": "L32",
       "id": "terminal_terminalselection_start",
-      "community": 9,
+      "community": 8,
       "norm_label": "start()"
     },
     {
@@ -1314,7 +1413,7 @@
       "source_file": "src/terminal/TerminalSelection.cpp",
       "source_location": "L37",
       "id": "terminal_terminalselection_end",
-      "community": 9,
+      "community": 8,
       "norm_label": "end()"
     },
     {
@@ -1447,7 +1546,7 @@
       "label": "terminal()",
       "file_type": "code",
       "source_file": "include/nordterminal/TerminalWidget.h",
-      "source_location": "L15",
+      "source_location": "L16",
       "id": "nordterminal_terminalwidget_terminal",
       "community": 22,
       "norm_label": "terminal()"
@@ -1485,7 +1584,7 @@
       "source_file": "include/nordterminal/TerminalTheme.h",
       "source_location": "L1",
       "id": "include_nordterminal_terminaltheme_h",
-      "community": 10,
+      "community": 9,
       "norm_label": "terminaltheme.h"
     },
     {
@@ -1494,7 +1593,7 @@
       "source_file": "include/nordterminal/TerminalTheme.h",
       "source_location": "L10",
       "id": "nordterminal_terminaltheme_terminal",
-      "community": 10,
+      "community": 9,
       "norm_label": "terminal()"
     },
     {
@@ -1543,11 +1642,38 @@
       "norm_label": "main()"
     },
     {
+      "label": "clearScreen()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1098",
+      "community": 10,
+      "norm_label": "clearscreen()",
+      "id": "terminal_terminalemulator_clearscreen"
+    },
+    {
+      "label": "sameTextStyle()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L36",
+      "community": 0,
+      "norm_label": "sametextstyle()",
+      "id": "terminal_terminalwidget_sametextstyle"
+    },
+    {
+      "label": "withSymbolFallbacks()",
+      "file_type": "code",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L52",
+      "community": 0,
+      "norm_label": "withsymbolfallbacks()",
+      "id": "terminal_terminalwidget_withsymbolfallbacks"
+    },
+    {
       "label": "cellAt()",
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L150",
-      "community": 7,
+      "community": 2,
       "norm_label": "cellat()",
       "id": "terminal_terminalemulator_cellat"
     },
@@ -1556,7 +1682,7 @@
       "file_type": "code",
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L178",
-      "community": 7,
+      "community": 10,
       "norm_label": "putcharacter()",
       "id": "terminal_terminalemulator_putcharacter"
     },
@@ -1738,8 +1864,18 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L20",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_terminal_terminalemulator_cpp",
-      "target": "terminal_terminalemulator_defaultlinefeednewlinemode",
+      "target": "terminal_terminalemulator_defaultlinefeednewlinemode"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_linehasvisibleglyph",
       "confidence_score": 1.0
     },
     {
@@ -2096,16 +2232,6 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L258",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "src_terminal_terminalemulator_cpp",
-      "target": "terminal_terminalemulator_clearscreen"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L994",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -2208,9 +2334,9 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1479",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_terminal_terminalemulator_cpp",
-      "target": "terminal_terminalemulator_softreset",
-      "confidence_score": 1.0
+      "target": "terminal_terminalemulator_softreset"
     },
     {
       "relation": "contains",
@@ -2316,6 +2442,26 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1809",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_clearwidecellat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1838",
+      "weight": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_sanitizewiderow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L265",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -2331,6 +2477,16 @@
       "confidence_score": 1.0,
       "source": "src_terminal_terminalemulator_cpp",
       "target": "terminal_terminalemulator_index"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L258",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_terminal_terminalemulator_cpp",
+      "target": "terminal_terminalemulator_clearscreen"
     },
     {
       "relation": "contains",
@@ -2370,9 +2526,9 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L96",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalemulator_reset",
-      "target": "terminal_terminalemulator_defaultlinefeednewlinemode",
-      "confidence_score": 1.0
+      "target": "terminal_terminalemulator_defaultlinefeednewlinemode"
     },
     {
       "relation": "calls",
@@ -2381,8 +2537,19 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1484",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalemulator_softreset",
-      "target": "terminal_terminalemulator_defaultlinefeednewlinemode",
+      "target": "terminal_terminalemulator_defaultlinefeednewlinemode"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L961",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_scrollup",
+      "target": "terminal_terminalemulator_linehasvisibleglyph",
       "confidence_score": 1.0
     },
     {
@@ -2731,6 +2898,17 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L752",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "terminal_terminalemulator_putcodepoint",
+      "target": "terminal_terminalemulator_markdirtyrow"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L740",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -2742,11 +2920,22 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L752",
+      "source_location": "L870",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "terminal_terminalemulator_putcodepoint",
-      "target": "terminal_terminalemulator_markdirtyrow"
+      "target": "terminal_terminalemulator_clearwidecellat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L902",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_putcodepoint",
+      "target": "terminal_terminalemulator_sanitizewiderow",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -2768,17 +2957,6 @@
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "terminal_terminalemulator_scrolldown",
-      "target": "terminal_terminalemulator_makeerasecell"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L986",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "terminal_terminalemulator_clearscreen",
       "target": "terminal_terminalemulator_makeerasecell"
     },
     {
@@ -2834,6 +3012,39 @@
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "terminal_terminalemulator_erasechars",
+      "target": "terminal_terminalemulator_makeerasecell"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1816",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_clearwidecellat",
+      "target": "terminal_terminalemulator_makeerasecell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1845",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_sanitizewiderow",
+      "target": "terminal_terminalemulator_makeerasecell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L986",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "terminal_terminalemulator_clearscreen",
       "target": "terminal_terminalemulator_makeerasecell"
     },
     {
@@ -2962,11 +3173,11 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L990",
+      "source_location": "L1159",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "terminal_terminalemulator_clearscreen",
-      "target": "terminal_terminalemulator_markdirtyall"
+      "source": "terminal_terminalemulator_clearline",
+      "target": "terminal_terminalemulator_clearwidecellat",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -3028,6 +3239,17 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1188",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_eraseindisplay",
+      "target": "terminal_terminalemulator_movecursor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1257",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -3050,11 +3272,33 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1232",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_insertblankchars",
+      "target": "terminal_terminalemulator_clearwidecellat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1063",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "terminal_terminalemulator_insertblankchars",
       "target": "terminal_terminalemulator_index"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1242",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_insertblankchars",
+      "target": "terminal_terminalemulator_sanitizewiderow",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -3083,11 +3327,33 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1251",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_deletechars",
+      "target": "terminal_terminalemulator_clearwidecellat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1080",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "terminal_terminalemulator_deletechars",
       "target": "terminal_terminalemulator_index"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1261",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_deletechars",
+      "target": "terminal_terminalemulator_sanitizewiderow",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -3121,6 +3387,17 @@
       "confidence_score": 1.0,
       "source": "terminal_terminalemulator_erasechars",
       "target": "terminal_terminalemulator_index"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1276",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_erasechars",
+      "target": "terminal_terminalemulator_clearwidecellat",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -3184,9 +3461,9 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1313",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalemulator_handlecsi",
-      "target": "terminal_terminalemulator_softreset",
-      "confidence_score": 1.0
+      "target": "terminal_terminalemulator_softreset"
     },
     {
       "relation": "calls",
@@ -3261,9 +3538,9 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1485",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalemulator_softreset",
-      "target": "terminal_terminalemulator_resetscrollregion",
-      "confidence_score": 1.0
+      "target": "terminal_terminalemulator_resetscrollregion"
     },
     {
       "relation": "calls",
@@ -3272,9 +3549,9 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1494",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalemulator_softreset",
-      "target": "terminal_terminalemulator_movecursor",
-      "confidence_score": 1.0
+      "target": "terminal_terminalemulator_movecursor"
     },
     {
       "relation": "calls",
@@ -3283,9 +3560,9 @@
       "source_file": "src/terminal/TerminalEmulator.cpp",
       "source_location": "L1495",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalemulator_softreset",
-      "target": "terminal_terminalemulator_markdirtyall",
-      "confidence_score": 1.0
+      "target": "terminal_terminalemulator_markdirtyall"
     },
     {
       "relation": "calls",
@@ -3297,6 +3574,17 @@
       "confidence_score": 1.0,
       "source": "terminal_terminalemulator_setprivatemode",
       "target": "terminal_terminalemulator_markdirtyrow"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1455",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "terminal_terminalemulator_setprivatemode",
+      "target": "terminal_terminalemulator_movecursor"
     },
     {
       "relation": "calls",
@@ -3325,11 +3613,11 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalEmulator.cpp",
-      "source_location": "L1455",
+      "source_location": "L990",
       "weight": 1.0,
       "confidence_score": 1.0,
-      "source": "terminal_terminalemulator_setprivatemode",
-      "target": "terminal_terminalemulator_movecursor"
+      "source": "terminal_terminalemulator_clearscreen",
+      "target": "terminal_terminalemulator_markdirtyall"
     },
     {
       "relation": "calls",
@@ -3341,6 +3629,28 @@
       "confidence_score": 1.0,
       "source": "terminal_terminalemulator_markdirtyrow",
       "target": "terminal_terminalemulator_markdirtyrange"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1817",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_clearwidecellat",
+      "target": "terminal_terminalemulator_index",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalEmulator.cpp",
+      "source_location": "L1847",
+      "weight": 1.0,
+      "source": "terminal_terminalemulator_sanitizewiderow",
+      "target": "terminal_terminalemulator_index",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -3500,9 +3810,9 @@
       "source_file": "src/terminal/TerminalSession.cpp",
       "source_location": "L765",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_terminal_terminalsession_cpp",
-      "target": "terminal_terminalsession_terminatewindows",
-      "confidence_score": 1.0
+      "target": "terminal_terminalsession_terminatewindows"
     },
     {
       "relation": "contains",
@@ -3592,9 +3902,9 @@
       "source_file": "src/terminal/TerminalSession.cpp",
       "source_location": "L787",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalsession_terminatewindows",
-      "target": "terminal_terminalsession_isvalidhandle",
-      "confidence_score": 1.0
+      "target": "terminal_terminalsession_isvalidhandle"
     },
     {
       "relation": "calls",
@@ -3636,9 +3946,9 @@
       "source_file": "src/terminal/TerminalSession.cpp",
       "source_location": "L784",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalsession_terminatewindows",
-      "target": "terminal_terminalsession_closehandlesafely",
-      "confidence_score": 1.0
+      "target": "terminal_terminalsession_closehandlesafely"
     },
     {
       "relation": "calls",
@@ -3735,9 +4045,9 @@
       "source_file": "src/terminal/TerminalSession.cpp",
       "source_location": "L231",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalsession_terminalsession",
-      "target": "terminal_terminalsession_terminatewindows",
-      "confidence_score": 1.0
+      "target": "terminal_terminalsession_terminatewindows"
     },
     {
       "relation": "calls",
@@ -3746,9 +4056,9 @@
       "source_file": "src/terminal/TerminalSession.cpp",
       "source_location": "L244",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalsession_start",
-      "target": "terminal_terminalsession_terminatewindows",
-      "confidence_score": 1.0
+      "target": "terminal_terminalsession_terminatewindows"
     },
     {
       "relation": "calls",
@@ -3845,9 +4155,9 @@
       "source_file": "src/terminal/TerminalSession.cpp",
       "source_location": "L760",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalsession_terminate",
-      "target": "terminal_terminalsession_terminatewindows",
-      "confidence_score": 1.0
+      "target": "terminal_terminalsession_terminatewindows"
     },
     {
       "relation": "calls",
@@ -3907,21 +4217,61 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L36",
+      "source_location": "L158",
       "weight": 1.0,
       "source": "src_terminal_terminalwidget_cpp",
-      "target": "terminal_terminalwidget_sametextstyle",
+      "target": "terminal_terminalwidget_istraceenabledfromenvironment",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L33",
+      "source_location": "L165",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "src_terminal_terminalwidget_cpp",
-      "target": "terminal_terminalwidget_withsymbolfallbacks"
+      "target": "terminal_terminalwidget_isverbosetracerequestedfromenvironment",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_outputflushdelayms",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L177",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_summarypathfortracefile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L191",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_shouldmirrortracelinetosummary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L206",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_escapedbytepreview",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -4099,9 +4449,9 @@
       "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L722",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_terminal_terminalwidget_cpp",
-      "target": "terminal_terminalwidget_rebuildfontcache",
-      "confidence_score": 1.0
+      "target": "terminal_terminalwidget_rebuildfontcache"
     },
     {
       "relation": "contains",
@@ -4109,9 +4459,9 @@
       "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L742",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "src_terminal_terminalwidget_cpp",
-      "target": "terminal_terminalwidget_cursorviewportrect",
-      "confidence_score": 1.0
+      "target": "terminal_terminalwidget_cursorviewportrect"
     },
     {
       "relation": "contains",
@@ -4132,6 +4482,56 @@
       "confidence_score": 1.0,
       "source": "src_terminal_terminalwidget_cpp",
       "target": "terminal_terminalwidget_flushpendingsessionoutput"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1028",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_initializetracelogging",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1087",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1106",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_tracebytes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1125",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_traceviewportsnapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1187",
+      "weight": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_isverbosetraceenabled",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -4217,6 +4617,26 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L36",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_sametextstyle"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L33",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "src_terminal_terminalwidget_cpp",
+      "target": "terminal_terminalwidget_withsymbolfallbacks"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L237",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -4249,10 +4669,10 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L417",
+      "source_location": "L1031",
       "weight": 1.0,
-      "source": "terminal_terminalwidget_paintevent",
-      "target": "terminal_terminalwidget_sametextstyle",
+      "source": "terminal_terminalwidget_initializetracelogging",
+      "target": "terminal_terminalwidget_istraceenabledfromenvironment",
       "confidence_score": 1.0
     },
     {
@@ -4260,22 +4680,66 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L107",
+      "source_location": "L1036",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "terminal_terminalwidget_terminalwidget",
-      "target": "terminal_terminalwidget_withsymbolfallbacks"
+      "source": "terminal_terminalwidget_initializetracelogging",
+      "target": "terminal_terminalwidget_isverbosetracerequestedfromenvironment",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
-      "source_location": "L142",
+      "source_location": "L885",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "terminal_terminalwidget_settheme",
-      "target": "terminal_terminalwidget_withsymbolfallbacks"
+      "source": "terminal_terminalwidget_consumesessionoutput",
+      "target": "terminal_terminalwidget_outputflushdelayms",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L903",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_flushpendingsessionoutput",
+      "target": "terminal_terminalwidget_outputflushdelayms",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1072",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_initializetracelogging",
+      "target": "terminal_terminalwidget_summarypathfortracefile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1100",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_tracelog",
+      "target": "terminal_terminalwidget_shouldmirrortracelinetosummary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1121",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_tracebytes",
+      "target": "terminal_terminalwidget_escapedbytepreview",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -4284,9 +4748,9 @@
       "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L177",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalwidget_terminalwidget",
-      "target": "terminal_terminalwidget_rebuildfontcache",
-      "confidence_score": 1.0
+      "target": "terminal_terminalwidget_rebuildfontcache"
     },
     {
       "relation": "calls",
@@ -4306,8 +4770,19 @@
       "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L193",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalwidget_terminalwidget",
-      "target": "terminal_terminalwidget_cursorviewportrect",
+      "target": "terminal_terminalwidget_cursorviewportrect"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L283",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_terminalwidget",
+      "target": "terminal_terminalwidget_initializetracelogging",
       "confidence_score": 1.0
     },
     {
@@ -4326,11 +4801,22 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L107",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "terminal_terminalwidget_terminalwidget",
+      "target": "terminal_terminalwidget_withsymbolfallbacks"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L218",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalwidget_settheme",
-      "target": "terminal_terminalwidget_rebuildfontcache",
-      "confidence_score": 1.0
+      "target": "terminal_terminalwidget_rebuildfontcache"
     },
     {
       "relation": "calls",
@@ -4359,11 +4845,44 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L142",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "terminal_terminalwidget_settheme",
+      "target": "terminal_terminalwidget_withsymbolfallbacks"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L314",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_startshell",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L174",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "terminal_terminalwidget_startshell",
       "target": "terminal_terminalwidget_resetcursorblink"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L332",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_startshell",
+      "target": "terminal_terminalwidget_traceviewportsnapshot",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -4375,6 +4894,28 @@
       "weight": 1.0,
       "source": "terminal_terminalwidget_startshell",
       "target": "terminal_terminalscrollback_terminalscrollback"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L342",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_stopshell",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L417",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "terminal_terminalwidget_paintevent",
+      "target": "terminal_terminalwidget_sametextstyle"
     },
     {
       "relation": "calls",
@@ -4408,6 +4949,28 @@
       "confidence_score": 1.0,
       "source": "terminal_terminalwidget_keypressevent",
       "target": "terminal_terminalwidget_selectedtext"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L622",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_keypressevent",
+      "target": "terminal_terminalwidget_tracebytes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L653",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_keypressevent",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -4537,9 +5100,9 @@
       "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L680",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalwidget_focusinevent",
-      "target": "terminal_terminalwidget_cursorviewportrect",
-      "confidence_score": 1.0
+      "target": "terminal_terminalwidget_cursorviewportrect"
     },
     {
       "relation": "calls",
@@ -4548,8 +5111,41 @@
       "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L692",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "terminal_terminalwidget_focusoutevent",
-      "target": "terminal_terminalwidget_cursorviewportrect",
+      "target": "terminal_terminalwidget_cursorviewportrect"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L793",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_recalculategrid",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L807",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_recalculategrid",
+      "target": "terminal_terminalwidget_flushpendingsessionoutput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L873",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_consumesessionoutput",
+      "target": "terminal_terminalwidget_tracebytes",
       "confidence_score": 1.0
     },
     {
@@ -4568,11 +5164,33 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L915",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_flushpendingsessionoutput",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
       "source_location": "L748",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "terminal_terminalwidget_flushpendingsessionoutput",
       "target": "terminal_terminalwidget_resetcursorblink"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L982",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_flushpendingsessionoutput",
+      "target": "terminal_terminalwidget_traceviewportsnapshot",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",
@@ -4595,6 +5213,72 @@
       "weight": 1.0,
       "source": "terminal_terminalwidget_flushpendingsessionoutput",
       "target": "terminal_terminalscrollback_terminalscrollback"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1080",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_initializetracelogging",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1113",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_tracebytes",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1134",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_traceviewportsnapshot",
+      "target": "terminal_terminalwidget_tracelog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1112",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_tracebytes",
+      "target": "terminal_terminalwidget_isverbosetraceenabled",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1127",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_traceviewportsnapshot",
+      "target": "terminal_terminalwidget_isverbosetraceenabled",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/terminal/TerminalWidget.cpp",
+      "source_location": "L1139",
+      "weight": 1.0,
+      "source": "terminal_terminalwidget_traceviewportsnapshot",
+      "target": "terminal_terminalwidget_visiblestartline",
+      "confidence_score": 1.0
     },
     {
       "relation": "calls",

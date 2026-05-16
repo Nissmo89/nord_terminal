@@ -118,6 +118,8 @@ private:
     void markDirtyRow(int row);
     void markDirtyRange(int topRow, int bottomRow);
     void recordViewportScroll(int lines);
+    void clearWideCellAt(int row, int col);
+    void sanitizeWideRow(int row);
 
     int m_rows = 24;
     int m_cols = 80;
