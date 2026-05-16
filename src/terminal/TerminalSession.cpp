@@ -458,20 +458,21 @@ bool TerminalSession::start(const TerminalProfile &profile)
         return false;
     }
 
-    QStringList commandLineParts;
-    commandLineParts.reserve(profile.arguments.size() + 1);
-    commandLineParts << shellPathInfo.absoluteFilePath();
-    commandLineParts << profile.arguments;
     QString commandLine;
-    for (int i = 0; i < commandLineParts.size(); ++i) {
+    for (int i = 0; i < profile.arguments.size(); ++i) {
         if (i > 0) {
             commandLine.append(QLatin1Char(' '));
         }
-        commandLine.append(quoteWindowsCommandArg(commandLineParts.at(i)));
+        commandLine.append(quoteWindowsCommandArg(profile.arguments.at(i)));
     }
-    std::wstring commandLineWide = commandLine.toStdWString();
-    std::vector<wchar_t> commandLineBuffer(commandLineWide.begin(), commandLineWide.end());
-    commandLineBuffer.push_back(L'\0');
+    std::vector<wchar_t> commandLineBuffer;
+    LPWSTR commandLinePtr = nullptr;
+    if (!commandLine.isEmpty()) {
+        std::wstring commandLineWide = commandLine.toStdWString();
+        commandLineBuffer.assign(commandLineWide.begin(), commandLineWide.end());
+        commandLineBuffer.push_back(L'\0');
+        commandLinePtr = commandLineBuffer.data();
+    }
 
     const std::wstring executableWide = shellPathInfo.absoluteFilePath().toStdWString();
     std::wstring workingDirectoryWide;
@@ -482,7 +483,7 @@ bool TerminalSession::start(const TerminalProfile &profile)
     }
 
     const DWORD createFlags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
-    const BOOL processCreated = ::CreateProcessW(executableWide.c_str(), commandLineBuffer.data(), nullptr, nullptr, FALSE,
+    const BOOL processCreated = ::CreateProcessW(executableWide.c_str(), commandLinePtr, nullptr, nullptr, FALSE,
         createFlags, environmentBlock.empty() ? nullptr : const_cast<wchar_t *>(environmentBlock.data()), workingDirectoryPtr,
         &startupInfoEx.StartupInfo, &conPty->processInfo);
     ::DeleteProcThreadAttributeList(attributeList);

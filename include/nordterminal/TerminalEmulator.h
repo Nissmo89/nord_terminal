@@ -135,6 +135,7 @@ private:
     bool m_synchronizedOutputMode = false;
     bool m_autoWrapMode = true;
     bool m_insertMode = false;
+    bool m_originMode = false;
     bool m_lineFeedNewLineMode = false;
     bool m_inAltBuffer = false;
     int m_scrollTop = 0;
@@ -154,6 +155,7 @@ private:
     std::vector<TerminalCell> m_altCells;
     std::vector<Line> m_scrolledLines;
     bool m_scrollbackClearRequested = false;
+    bool m_suppressScrollbackCapture = false;
     bool m_hasDirtyRows = true;
     int m_dirtyTopRow = 0;
     int m_dirtyBottomRow = 0;
