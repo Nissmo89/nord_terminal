@@ -408,6 +408,8 @@ bool TerminalSession::start(const TerminalProfile &profile)
     ::SetHandleInformation(conPty->ptyInputWrite, HANDLE_FLAG_INHERIT, 0);
     ::SetHandleInformation(conPty->ptyOutputRead, HANDLE_FLAG_INHERIT, 0);
 
+    // Start ConPTY at the widget's requested grid size to avoid an initial
+    // 80x24 render/wrap pass before the first resize reaches the backend.
     const COORD initialSize {
         static_cast<SHORT>(std::clamp(m_requestedCols, 1, 32767)),
         static_cast<SHORT>(std::clamp(m_requestedRows, 1, 32767)),

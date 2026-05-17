@@ -62,3 +62,9 @@ graphify-out/obsidian/
 graphify-out/graph.html
 graphify-out/cost.json
 graphify-out/manifest.json
+
+# Local/generated Windows fix notes and helper scripts
+*_SUMMARY.md
+report_windows_side.md
+PUSH_*.md
+PUSH_*.sh
