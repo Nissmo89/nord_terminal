@@ -257,6 +257,8 @@ TerminalWidget::TerminalWidget(QWidget *parent)
         m_scrollOffset = verticalScrollBar()->maximum() - value;
         viewport()->update();
     });
+    // Output can grow the scroll range without moving the thumb. Keep the
+    // derived offset in sync so history view does not drift under live output.
     connect(verticalScrollBar(), &QScrollBar::rangeChanged, this, [this](int, int) {
         m_scrollOffset = verticalScrollBar()->maximum() - verticalScrollBar()->value();
     });
@@ -392,6 +394,9 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
     bool lastStrike = false;
     const QString spaceGlyph = QStringLiteral(" ");
     const TerminalCell emptyCell {};
+    auto isValidWideLeader = [](const TerminalCell &cell, const TerminalCell &nextCell) {
+        return cell.wide && nextCell.wideContinuation;
+    };
 
     for (int row = firstRow; row <= lastRow; ++row) {
         const int absoluteLine = startLine + row;
@@ -428,6 +433,9 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
             // Pass 1: paint backgrounds.
             for (int col = 0; col < cols; ++col) {
                 const TerminalCell &cell = col < static_cast<int>(rowCells.size()) ? rowCells[static_cast<std::size_t>(col)] : emptyCell;
+                const TerminalCell &nextCell = (col + 1 < cols && (col + 1) < static_cast<int>(rowCells.size()))
+                    ? rowCells[static_cast<std::size_t>(col + 1)]
+                    : emptyCell;
                 QColor background = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
                 if (cell.inverse) {
                     background = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
@@ -436,7 +444,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                     background = m_theme.selection;
                 }
 
-                const int widthCells = (cell.wide && col + 1 < cols) ? 2 : 1;
+                const int widthCells = isValidWideLeader(cell, nextCell) ? 2 : 1;
                 const int x = col * m_cellWidth;
                 painter.fillRect(x, y, m_cellWidth * widthCells, m_cellHeight, background);
             }
@@ -475,12 +483,20 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                     lastStrike = cell.strikethrough;
                 }
 
+                const TerminalCell &nextCell = (col + 1 < cols && (col + 1) < static_cast<int>(rowCells.size()))
+                    ? rowCells[static_cast<std::size_t>(col + 1)]
+                    : emptyCell;
+                const bool validWide = isValidWideLeader(cell, nextCell);
                 if (cell.wide || cell.character.size() > 1) {
                     if (cell.character != spaceGlyph) {
+                        const QRect cellRect(col * m_cellWidth, y, m_cellWidth * (validWide ? 2 : 1), m_cellHeight);
                         painter.setPen(foreground);
-                        painter.drawText(col * m_cellWidth, y + m_ascent, cell.character);
+                        painter.save();
+                        painter.setClipRect(cellRect);
+                        painter.drawText(cellRect.x(), y + m_ascent, cell.character);
+                        painter.restore();
                     }
-                    col += cell.wide ? 2 : 1;
+                    col += validWide ? 2 : 1;
                     continue;
                 }
 
@@ -488,7 +504,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                     ++col;
                     continue;
                 }
-                const int widthCells = cell.wide ? 2 : 1;
+                const int widthCells = 1;
                 const QRect cellRect(col * m_cellWidth, y, m_cellWidth * widthCells, m_cellHeight);
                 painter.setPen(foreground);
                 painter.save();
@@ -509,6 +525,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         // Pass 1: paint all cell backgrounds to avoid clipping glyphs by adjacent background fills.
         for (int col = 0; col < cols; ++col) {
             const TerminalCell &cell = rowCells[static_cast<std::size_t>(col)];
+            const TerminalCell &nextCell = (col + 1 < cols) ? rowCells[static_cast<std::size_t>(col + 1)] : emptyCell;
             QColor background = cell.hasBackgroundRgb ? cell.backgroundRgb : m_theme.resolveBackground(cell.background);
             if (cell.inverse) {
                 background = cell.hasForegroundRgb ? cell.foregroundRgb : m_theme.resolveForeground(cell.foreground);
@@ -517,7 +534,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                 background = m_theme.selection;
             }
 
-            const int widthCells = (cell.wide && col + 1 < cols) ? 2 : 1;
+            const int widthCells = isValidWideLeader(cell, nextCell) ? 2 : 1;
             const int x = col * m_cellWidth;
             painter.fillRect(x, y, m_cellWidth * widthCells, m_cellHeight, background);
         }
@@ -556,13 +573,19 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                 lastStrike = cell.strikethrough;
             }
 
+            const TerminalCell &nextCell = (col + 1 < cols) ? rowCells[static_cast<std::size_t>(col + 1)] : emptyCell;
+            const bool validWide = isValidWideLeader(cell, nextCell);
             // Wide and complex cells are rendered individually to preserve cell alignment.
             if (cell.wide || cell.character.size() > 1) {
                 if (cell.character != spaceGlyph) {
+                    const QRect cellRect(col * m_cellWidth, y, m_cellWidth * (validWide ? 2 : 1), m_cellHeight);
                     painter.setPen(foreground);
-                    painter.drawText(col * m_cellWidth, y + m_ascent, cell.character);
+                    painter.save();
+                    painter.setClipRect(cellRect);
+                    painter.drawText(cellRect.x(), y + m_ascent, cell.character);
+                    painter.restore();
                 }
-                col += cell.wide ? 2 : 1;
+                col += validWide ? 2 : 1;
                 continue;
             }
 
@@ -570,7 +593,7 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
                 ++col;
                 continue;
             }
-            const int widthCells = cell.wide ? 2 : 1;
+            const int widthCells = 1;
             const QRect cellRect(col * m_cellWidth, y, m_cellWidth * widthCells, m_cellHeight);
             painter.setPen(foreground);
             painter.save();
@@ -589,10 +612,13 @@ void TerminalWidget::paintEvent(QPaintEvent *event)
         QFont cursorFont = cachedFont(cursorCell.bold, cursorCell.italic);
         cursorFont.setUnderline(cursorCell.underline);
         cursorFont.setStrikeOut(cursorCell.strikethrough);
-        const QString cursorChar = cursorCell.character;
+        const QString cursorChar = cursorCell.wideContinuation ? QStringLiteral(" ") : cursorCell.character;
         painter.setPen(m_theme.background);
         painter.setFont(cursorFont);
+        painter.save();
+        painter.setClipRect(cursorRect);
         painter.drawText(cursorRect.x(), cursorRect.y() + m_ascent, cursorChar.isEmpty() ? QStringLiteral(" ") : cursorChar);
+        painter.restore();
     }
 }
 
@@ -895,6 +921,8 @@ void TerminalWidget::flushPendingSessionOutput()
         return;
     }
 
+    // Reuse the same deferred flush path after early returns so batched ConPTY
+    // output continues draining even when a clear forced a full repaint.
     auto schedulePendingFlush = [this]() {
         if (m_pendingSessionOutput.isEmpty() || m_outputFlushQueued) {
             return;
@@ -976,6 +1004,8 @@ void TerminalWidget::flushPendingSessionOutput()
         m_wheelRemainder = 0;
         m_scrollOffset = 0;
         verticalScrollBar()->setValue(verticalScrollBar()->maximum());
+        // Clear/reset style updates are safer with a full repaint than with
+        // incremental dirty-region math, which can leave stale chunks visible.
         traceLog(QStringLiteral("scrollback cleared by emulator"));
         resetCursorBlink();
         viewport()->update();

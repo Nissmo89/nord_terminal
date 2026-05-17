@@ -66,6 +66,28 @@ void TerminalEmulator::resize(int rows, int cols)
                 resized[static_cast<std::size_t>(row * newCols + col)] = source[static_cast<std::size_t>(row * m_cols + col)];
             }
         }
+        // Width changes can split wide/continuation pairs at the new boundary.
+        // Normalize each copied row so rendering never sees dangling halves.
+        for (int row = 0; row < copyRows; ++row) {
+            for (int col = 0; col < newCols; ++col) {
+                TerminalCell &cell = resized[static_cast<std::size_t>(row * newCols + col)];
+                if (cell.wide) {
+                    const bool hasContinuation = (col + 1 < newCols)
+                        && resized[static_cast<std::size_t>(row * newCols + col + 1)].wideContinuation;
+                    if (!hasContinuation) {
+                        cell = TerminalCell {};
+                    }
+                    continue;
+                }
+                if (!cell.wideContinuation) {
+                    continue;
+                }
+                const bool hasLeadingWide = (col > 0) && resized[static_cast<std::size_t>(row * newCols + col - 1)].wide;
+                if (!hasLeadingWide) {
+                    cell = TerminalCell {};
+                }
+            }
+        }
         return resized;
     };
 
@@ -1816,6 +1838,8 @@ void TerminalEmulator::clearWideCellAt(int row, int col)
     const TerminalCell eraseCell = makeEraseCell();
     TerminalCell &cell = cells[static_cast<std::size_t>(index(row, col))];
     if (cell.wide) {
+        // Mutating either half of a wide glyph must clear the whole cluster so
+        // later edits cannot leave a dangling continuation cell behind.
         cell = eraseCell;
         if (col + 1 < m_cols) {
             cells[static_cast<std::size_t>(index(row, col + 1))] = eraseCell;
@@ -1843,6 +1867,8 @@ void TerminalEmulator::sanitizeWideRow(int row)
 
     auto &cells = activeCells();
     const TerminalCell eraseCell = makeEraseCell();
+    // Row shift operations can split wide pairs. Normalize the row afterward
+    // so rendering and cursor math see only valid lead/continuation pairs.
     for (int col = 0; col < m_cols; ++col) {
         TerminalCell &cell = cells[static_cast<std::size_t>(index(row, col))];
         if (cell.wide) {
