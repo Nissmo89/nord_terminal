@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.21)
 
 project(NordTerminal VERSION 0.1.0 LANGUAGES CXX)
 
@@ -17,7 +17,12 @@ set(CMAKE_AUTOUIC OFF)
 set(CMAKE_AUTORCC OFF)
 
 option(NORD_TERMINAL_BUILD_EXAMPLES "Build example applications" ON)
-option(NORD_TERMINAL_ENABLE_LTO "Enable IPO/LTO for NordTerminal targets" ON)
+
+set(_nordterminal_lto_default ON)
+if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(_nordterminal_lto_default OFF)
+endif()
+option(NORD_TERMINAL_ENABLE_LTO "Enable IPO/LTO for NordTerminal targets" ${_nordterminal_lto_default})
 
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets)
 

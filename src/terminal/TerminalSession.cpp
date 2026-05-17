@@ -408,9 +408,11 @@ bool TerminalSession::start(const TerminalProfile &profile)
     ::SetHandleInformation(conPty->ptyInputWrite, HANDLE_FLAG_INHERIT, 0);
     ::SetHandleInformation(conPty->ptyOutputRead, HANDLE_FLAG_INHERIT, 0);
 
+    // Start ConPTY at the widget's requested grid size to avoid an initial
+    // 80x24 render/wrap pass before the first resize reaches the backend.
     const COORD initialSize {
-        static_cast<SHORT>(80),
-        static_cast<SHORT>(24),
+        static_cast<SHORT>(std::clamp(m_requestedCols, 1, 32767)),
+        static_cast<SHORT>(std::clamp(m_requestedRows, 1, 32767)),
     };
     const HRESULT createConPtyHr =
         conPty->createPseudoConsole(initialSize, conPty->ptyInputRead, conPty->ptyOutputWrite, 0, &conPty->pseudoConsole);
@@ -458,20 +460,21 @@ bool TerminalSession::start(const TerminalProfile &profile)
         return false;
     }
 
-    QStringList commandLineParts;
-    commandLineParts.reserve(profile.arguments.size() + 1);
-    commandLineParts << shellPathInfo.absoluteFilePath();
-    commandLineParts << profile.arguments;
     QString commandLine;
-    for (int i = 0; i < commandLineParts.size(); ++i) {
+    for (int i = 0; i < profile.arguments.size(); ++i) {
         if (i > 0) {
             commandLine.append(QLatin1Char(' '));
         }
-        commandLine.append(quoteWindowsCommandArg(commandLineParts.at(i)));
+        commandLine.append(quoteWindowsCommandArg(profile.arguments.at(i)));
     }
-    std::wstring commandLineWide = commandLine.toStdWString();
-    std::vector<wchar_t> commandLineBuffer(commandLineWide.begin(), commandLineWide.end());
-    commandLineBuffer.push_back(L'\0');
+    std::vector<wchar_t> commandLineBuffer;
+    LPWSTR commandLinePtr = nullptr;
+    if (!commandLine.isEmpty()) {
+        std::wstring commandLineWide = commandLine.toStdWString();
+        commandLineBuffer.assign(commandLineWide.begin(), commandLineWide.end());
+        commandLineBuffer.push_back(L'\0');
+        commandLinePtr = commandLineBuffer.data();
+    }
 
     const std::wstring executableWide = shellPathInfo.absoluteFilePath().toStdWString();
     std::wstring workingDirectoryWide;
@@ -482,7 +485,7 @@ bool TerminalSession::start(const TerminalProfile &profile)
     }
 
     const DWORD createFlags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
-    const BOOL processCreated = ::CreateProcessW(executableWide.c_str(), commandLineBuffer.data(), nullptr, nullptr, FALSE,
+    const BOOL processCreated = ::CreateProcessW(executableWide.c_str(), commandLinePtr, nullptr, nullptr, FALSE,
         createFlags, environmentBlock.empty() ? nullptr : const_cast<wchar_t *>(environmentBlock.data()), workingDirectoryPtr,
         &startupInfoEx.StartupInfo, &conPty->processInfo);
     ::DeleteProcThreadAttributeList(attributeList);
@@ -713,13 +716,16 @@ void TerminalSession::writeInput(const QByteArray &data)
 
 void TerminalSession::resizePty(int rows, int cols)
 {
+    m_requestedRows = std::max(1, rows);
+    m_requestedCols = std::max(1, cols);
+
 #if defined(Q_OS_UNIX)
     if (m_masterFd < 0) {
         return;
     }
     struct winsize ws {};
-    ws.ws_row = static_cast<unsigned short>(std::max(1, rows));
-    ws.ws_col = static_cast<unsigned short>(std::max(1, cols));
+    ws.ws_row = static_cast<unsigned short>(m_requestedRows);
+    ws.ws_col = static_cast<unsigned short>(m_requestedCols);
     ws.ws_xpixel = 0;
     ws.ws_ypixel = 0;
     ::ioctl(m_masterFd, TIOCSWINSZ, &ws);
@@ -728,8 +734,8 @@ void TerminalSession::resizePty(int rows, int cols)
         return;
     }
     const COORD newSize {
-        static_cast<SHORT>(std::clamp(cols, 1, 32767)),
-        static_cast<SHORT>(std::clamp(rows, 1, 32767)),
+        static_cast<SHORT>(std::clamp(m_requestedCols, 1, 32767)),
+        static_cast<SHORT>(std::clamp(m_requestedRows, 1, 32767)),
     };
     const HRESULT hr = m_conPty->resizePseudoConsole(m_conPty->pseudoConsole, newSize);
     if (FAILED(hr)) {

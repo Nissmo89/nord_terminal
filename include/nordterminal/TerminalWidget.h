@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractScrollArea>
+#include <QFile>
 #include <QFont>
 #include <QRect>
 #include <QTimer>
@@ -47,6 +48,11 @@ private:
     void consumeSessionOutput(const QByteArray &data);
     void flushPendingSessionOutput();
     void resetCursorBlink();
+    void initializeTraceLogging();
+    void traceLog(const QString &message);
+    void traceBytes(const QString &label, const QByteArray &data);
+    void traceViewportSnapshot(const QString &label);
+    [[nodiscard]] bool isVerboseTraceEnabled() const;
     [[nodiscard]] int visibleStartLine() const;
     [[nodiscard]] int totalLines() const;
     [[nodiscard]] QPoint toViewportCell(const QPoint &pixelPos) const;
@@ -54,6 +60,8 @@ private:
     [[nodiscard]] QString lineTextAtAbsolute(int absoluteLine) const;
     [[nodiscard]] QString selectedText() const;
     void maybeSendMouseReport(QMouseEvent *event, bool release);
+    void paintEmulatorRows(QPainter &painter, int firstRow, int lastRow, int rows, int cols);
+    void paintCursor(QPainter &painter);
 
     TerminalTheme m_theme = TerminalTheme::nordDark();
     TerminalEmulator m_emulator;
@@ -74,6 +82,12 @@ private:
     QFont m_fontBold;
     QFont m_fontItalic;
     QFont m_fontBoldItalic;
+    bool m_traceEnabled = false;
+    bool m_traceVerbose = false;
+    QFile m_traceFile;
+    QFile m_traceSummaryFile;
+    quint64 m_traceEventId = 0;
+    int m_traceSnapshotMaxRows = 0;
 };
 
 } // namespace nord::terminal

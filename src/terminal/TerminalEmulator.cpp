@@ -22,6 +22,21 @@ constexpr bool defaultLineFeedNewLineMode()
     return false;
 }
 
+bool lineHasVisibleGlyph(const TerminalEmulator::Line &line)
+{
+    for (const TerminalCell &cell : line) {
+        if (cell.wideContinuation || cell.character.isEmpty()) {
+            continue;
+        }
+        for (const QChar ch : cell.character) {
+            if (!ch.isSpace()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 } // namespace
 
 TerminalEmulator::TerminalEmulator(int rows, int cols)
@@ -49,6 +64,28 @@ void TerminalEmulator::resize(int rows, int cols)
         for (int row = 0; row < copyRows; ++row) {
             for (int col = 0; col < copyCols; ++col) {
                 resized[static_cast<std::size_t>(row * newCols + col)] = source[static_cast<std::size_t>(row * m_cols + col)];
+            }
+        }
+        // Width changes can split wide/continuation pairs at the new boundary.
+        // Normalize each copied row so rendering never sees dangling halves.
+        for (int row = 0; row < copyRows; ++row) {
+            for (int col = 0; col < newCols; ++col) {
+                TerminalCell &cell = resized[static_cast<std::size_t>(row * newCols + col)];
+                if (cell.wide) {
+                    const bool hasContinuation = (col + 1 < newCols)
+                        && resized[static_cast<std::size_t>(row * newCols + col + 1)].wideContinuation;
+                    if (!hasContinuation) {
+                        cell = TerminalCell {};
+                    }
+                    continue;
+                }
+                if (!cell.wideContinuation) {
+                    continue;
+                }
+                const bool hasLeadingWide = (col > 0) && resized[static_cast<std::size_t>(row * newCols + col - 1)].wide;
+                if (!hasLeadingWide) {
+                    cell = TerminalCell {};
+                }
             }
         }
         return resized;
@@ -89,6 +126,7 @@ void TerminalEmulator::reset()
     m_synchronizedOutputMode = false;
     m_autoWrapMode = true;
     m_insertMode = false;
+    m_originMode = false;
     m_lineFeedNewLineMode = defaultLineFeedNewLineMode();
     m_inAltBuffer = false;
     resetScrollRegion();
@@ -105,6 +143,7 @@ void TerminalEmulator::reset()
     m_style = {};
     m_scrolledLines.clear();
     m_scrollbackClearRequested = false;
+    m_suppressScrollbackCapture = false;
     markDirtyAll();
     m_pendingViewportScrollLines = 0;
 }
@@ -811,7 +850,33 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
     }
 
     auto &cells = activeCells();
-    int charWidth = std::clamp(codepointDisplayWidth(codepoint), 1, 2);
+    const int displayWidth = codepointDisplayWidth(codepoint);
+    if (displayWidth <= 0) {
+        if (m_cursorCol <= 0) {
+            return;
+        }
+        int baseCol = m_cursorCol - 1;
+        const TerminalCell *leftCell = &cells[static_cast<std::size_t>(index(m_cursorRow, baseCol))];
+        if (leftCell->wideContinuation && baseCol > 0) {
+            --baseCol;
+            leftCell = &cells[static_cast<std::size_t>(index(m_cursorRow, baseCol))];
+        }
+        TerminalCell &target = cells[static_cast<std::size_t>(index(m_cursorRow, baseCol))];
+        const char32_t scalar = codepoint;
+        const QString mark = QString::fromUcs4(&scalar, 1);
+        if (target.character.isEmpty()) {
+            target.character = mark;
+        } else {
+            target.character.append(mark);
+        }
+        if (m_suppressScrollbackCapture && !QChar::isSpace(static_cast<char32_t>(codepoint))) {
+            m_suppressScrollbackCapture = false;
+        }
+        markDirtyRow(m_cursorRow);
+        return;
+    }
+
+    int charWidth = std::clamp(displayWidth, 1, 2);
     if (charWidth == 2 && m_cursorCol == m_cols - 1) {
         if (m_autoWrapMode) {
             newline();
@@ -822,6 +887,11 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
             m_cursorCol = m_cols - 1;
             return;
         }
+    }
+
+    clearWideCellAt(m_cursorRow, m_cursorCol);
+    if (charWidth == 2) {
+        clearWideCellAt(m_cursorRow, m_cursorCol + 1);
     }
 
     TerminalCell cell;
@@ -851,9 +921,13 @@ void TerminalEmulator::putCodepoint(char32_t codepoint)
         for (int col = m_cursorCol; col < m_cursorCol + shift && col < m_cols; ++col) {
             cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
         }
+        sanitizeWideRow(m_cursorRow);
     }
 
     cells[static_cast<std::size_t>(index(m_cursorRow, m_cursorCol))] = cell;
+    if (m_suppressScrollbackCapture && !QChar::isSpace(static_cast<char32_t>(codepoint))) {
+        m_suppressScrollbackCapture = false;
+    }
     if (charWidth == 2 && m_cursorCol + 1 < m_cols) {
         TerminalCell continuation = makeEraseCell();
         continuation.wideContinuation = true;
@@ -896,7 +970,8 @@ void TerminalEmulator::scrollUp(int topRow, int bottomRow)
         return;
     }
 
-    if (!m_inAltBuffer && top == 0) {
+    const bool fullViewportScroll = (top == 0 && bottom == m_rows - 1);
+    if (!m_inAltBuffer && fullViewportScroll && !m_suppressScrollbackCapture) {
         Line line;
         line.reserve(static_cast<std::size_t>(m_cols));
         const TerminalCell *row = rowData(0);
@@ -905,7 +980,9 @@ void TerminalEmulator::scrollUp(int topRow, int bottomRow)
                 line.push_back(row[static_cast<std::size_t>(col)]);
             }
         }
-        m_scrolledLines.push_back(std::move(line));
+        if (lineHasVisibleGlyph(line)) {
+            m_scrolledLines.push_back(std::move(line));
+        }
     }
 
     const TerminalCell eraseCell = makeEraseCell();
@@ -921,7 +998,7 @@ void TerminalEmulator::scrollUp(int topRow, int bottomRow)
         cells[static_cast<std::size_t>(bottom * m_cols + col)] = eraseCell;
     }
     markDirtyRange(top, bottom);
-    if (top == 0 && bottom == m_rows - 1) {
+    if (fullViewportScroll) {
         recordViewportScroll(-1);
     }
 }
@@ -1101,6 +1178,8 @@ void TerminalEmulator::clearLine(int row, int startCol, int endCol)
     if (from > to) {
         return;
     }
+    clearWideCellAt(row, from);
+    clearWideCellAt(row, to);
     const TerminalCell eraseCell = makeEraseCell();
     auto &cells = activeCells();
     for (int col = from; col <= to; ++col) {
@@ -1119,6 +1198,19 @@ void TerminalEmulator::eraseInDisplay(int mode)
         // If output scrolled earlier in this batch, dropping those lines keeps
         // ED2/ED3 from repopulating scrollback after a clear.
         m_scrolledLines.clear();
+        m_suppressScrollbackCapture = true;
+#if defined(Q_OS_WIN)
+        // ConPTY/cmd "cls" commonly emits ED2. Mirror cmd behavior by clearing
+        // accumulated scrollback for a true blank buffer.
+        if (mode == 2) {
+            m_scrollbackClearRequested = true;
+            // In Windows shells, ED2 is commonly used as a full "cls" clear.
+            // Keep cursor anchored at home to avoid mid-screen prompt placement.
+            if (!m_inAltBuffer) {
+                moveCursor(0, 0);
+            }
+        }
+#endif
         if (mode == 3) {
             m_scrollbackClearRequested = true;
         }
@@ -1159,6 +1251,7 @@ void TerminalEmulator::insertBlankChars(int count)
     if (count <= 0 || m_cursorRow < 0 || m_cursorRow >= m_rows || m_cursorCol >= m_cols) {
         return;
     }
+    clearWideCellAt(m_cursorRow, m_cursorCol);
     const int n = std::clamp(count, 1, m_cols - m_cursorCol);
     auto &cells = activeCells();
     for (int col = m_cols - 1; col >= m_cursorCol + n; --col) {
@@ -1168,6 +1261,7 @@ void TerminalEmulator::insertBlankChars(int count)
     for (int col = m_cursorCol; col < m_cursorCol + n; ++col) {
         cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
     }
+    sanitizeWideRow(m_cursorRow);
     markDirtyRow(m_cursorRow);
 }
 
@@ -1176,6 +1270,7 @@ void TerminalEmulator::deleteChars(int count)
     if (count <= 0 || m_cursorRow < 0 || m_cursorRow >= m_rows || m_cursorCol >= m_cols) {
         return;
     }
+    clearWideCellAt(m_cursorRow, m_cursorCol);
     const int n = std::clamp(count, 1, m_cols - m_cursorCol);
     auto &cells = activeCells();
     for (int col = m_cursorCol; col + n < m_cols; ++col) {
@@ -1185,6 +1280,7 @@ void TerminalEmulator::deleteChars(int count)
     for (int col = m_cols - n; col < m_cols; ++col) {
         cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
     }
+    sanitizeWideRow(m_cursorRow);
     markDirtyRow(m_cursorRow);
 }
 
@@ -1199,6 +1295,8 @@ void TerminalEmulator::eraseChars(int count)
     for (int col = m_cursorCol; col < m_cursorCol + n; ++col) {
         cells[static_cast<std::size_t>(index(m_cursorRow, col))] = eraseCell;
     }
+    clearWideCellAt(m_cursorRow, m_cursorCol);
+    clearWideCellAt(m_cursorRow, m_cursorCol + n - 1);
     markDirtyRow(m_cursorRow);
 }
 
@@ -1251,6 +1349,9 @@ bool TerminalEmulator::tryHandleDecrqm(char prefix, char finalChar, const QByteA
             break;
         case 7:
             state = m_autoWrapMode ? 1 : 2;
+            break;
+        case 6:
+            state = m_originMode ? 1 : 2;
             break;
         case 25:
             state = m_cursorVisible ? 1 : 2;
@@ -1342,10 +1443,10 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
 
     switch (finalChar) {
     case 'A':
-        moveCursor(m_cursorRow - effectiveParam(parsed, 0, 1), m_cursorCol);
+        moveCursor(std::max(m_originMode ? m_scrollTop : 0, m_cursorRow - effectiveParam(parsed, 0, 1)), m_cursorCol);
         return;
     case 'B':
-        moveCursor(m_cursorRow + effectiveParam(parsed, 0, 1), m_cursorCol);
+        moveCursor(std::min(m_originMode ? m_scrollBottom : (m_rows - 1), m_cursorRow + effectiveParam(parsed, 0, 1)), m_cursorCol);
         return;
     case 'C':
         moveCursor(m_cursorRow, m_cursorCol + effectiveParam(parsed, 0, 1));
@@ -1354,21 +1455,38 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         moveCursor(m_cursorRow, m_cursorCol - effectiveParam(parsed, 0, 1));
         return;
     case 'E':
-        moveCursor(m_cursorRow + effectiveParam(parsed, 0, 1), 0);
+        moveCursor(std::min(m_originMode ? m_scrollBottom : (m_rows - 1), m_cursorRow + effectiveParam(parsed, 0, 1)), 0);
         return;
     case 'F':
-        moveCursor(m_cursorRow - effectiveParam(parsed, 0, 1), 0);
+        moveCursor(std::max(m_originMode ? m_scrollTop : 0, m_cursorRow - effectiveParam(parsed, 0, 1)), 0);
         return;
     case 'G':
         moveCursor(m_cursorRow, effectiveParam(parsed, 0, 1) - 1);
         return;
     case 'H':
     case 'f':
-        moveCursor(effectiveParam(parsed, 0, 1) - 1, effectiveParam(parsed, 1, 1) - 1);
+    {
+        const int requestedRow = effectiveParam(parsed, 0, 1) - 1;
+        const int requestedCol = effectiveParam(parsed, 1, 1) - 1;
+        if (m_originMode) {
+            moveCursor(m_scrollTop + requestedRow, requestedCol);
+            m_cursorRow = std::clamp(m_cursorRow, m_scrollTop, m_scrollBottom);
+        } else {
+            moveCursor(requestedRow, requestedCol);
+        }
         return;
+    }
     case 'd':
-        moveCursor(effectiveParam(parsed, 0, 1) - 1, m_cursorCol);
+    {
+        const int requestedRow = effectiveParam(parsed, 0, 1) - 1;
+        if (m_originMode) {
+            moveCursor(m_scrollTop + requestedRow, m_cursorCol);
+            m_cursorRow = std::clamp(m_cursorRow, m_scrollTop, m_scrollBottom);
+        } else {
+            moveCursor(requestedRow, m_cursorCol);
+        }
         return;
+    }
     case 'J':
         eraseInDisplay(effectiveParam(parsed, 0, 0));
         return;
@@ -1409,7 +1527,7 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         }
         if (parsed.empty()) {
             resetScrollRegion();
-            moveCursor(0, 0);
+            moveCursor(m_originMode ? m_scrollTop : 0, 0);
             return;
         }
         {
@@ -1423,7 +1541,7 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
             }
             if (top >= 1 && bottom <= m_rows && top < bottom) {
                 setScrollRegion(top - 1, bottom - 1);
-                moveCursor(0, 0);
+                moveCursor(m_originMode ? m_scrollTop : 0, 0);
             }
         }
         return;
@@ -1445,10 +1563,11 @@ void TerminalEmulator::handleCsi(char finalChar, QByteArray params)
         return;
     case 'n': {
         const int requestType = effectiveParam(parsed, 0, 0);
+        const int reportedRow = m_originMode ? (m_cursorRow - m_scrollTop + 1) : (m_cursorRow + 1);
         if (prefix == '\0' && requestType == 6) {
-            m_pendingResponse.append("\x1b[" + QByteArray::number(m_cursorRow + 1) + ";" + QByteArray::number(m_cursorCol + 1) + "R");
+            m_pendingResponse.append("\x1b[" + QByteArray::number(reportedRow) + ";" + QByteArray::number(m_cursorCol + 1) + "R");
         } else if (prefix == '?' && requestType == 6) {
-            m_pendingResponse.append("\x1b[?" + QByteArray::number(m_cursorRow + 1) + ";" + QByteArray::number(m_cursorCol + 1) + "R");
+            m_pendingResponse.append("\x1b[?" + QByteArray::number(reportedRow) + ";" + QByteArray::number(m_cursorCol + 1) + "R");
         }
         return;
     }
@@ -1469,6 +1588,7 @@ void TerminalEmulator::softReset()
     m_cursorVisible = true;
     m_applicationCursorKeys = false;
     m_insertMode = false;
+    m_originMode = false;
     m_lineFeedNewLineMode = defaultLineFeedNewLineMode();
     resetScrollRegion();
     m_charsetG0 = Charset::Ascii;
@@ -1530,6 +1650,12 @@ void TerminalEmulator::setPrivateMode(int mode, bool enabled)
         return;
     }
 
+    if (mode == 6) {
+        m_originMode = enabled;
+        moveCursor(m_originMode ? m_scrollTop : 0, 0);
+        return;
+    }
+
     if (mode == 1000) {
         if (enabled) {
             m_mouseTrackingMode = MouseTrackingMode::Normal;
@@ -1578,6 +1704,7 @@ void TerminalEmulator::setPrivateMode(int mode, bool enabled)
             m_savedCursorColMain = m_cursorCol;
             std::fill(m_altCells.begin(), m_altCells.end(), TerminalCell{});
             m_inAltBuffer = true;
+            m_suppressScrollbackCapture = true;
             m_cursorRow = 0;
             m_cursorCol = 0;
             resetScrollRegion();
@@ -1587,6 +1714,7 @@ void TerminalEmulator::setPrivateMode(int mode, bool enabled)
         }
         if (!enabled && m_inAltBuffer) {
             m_inAltBuffer = false;
+            m_suppressScrollbackCapture = true;
             moveCursor(m_savedCursorRowMain, m_savedCursorColMain);
             resetScrollRegion();
             markDirtyAll();
@@ -1698,6 +1826,67 @@ void TerminalEmulator::recordViewportScroll(int lines)
         return;
     }
     m_pendingViewportScrollLines = std::clamp(m_pendingViewportScrollLines + lines, -m_rows, m_rows);
+}
+
+void TerminalEmulator::clearWideCellAt(int row, int col)
+{
+    if (row < 0 || row >= m_rows || col < 0 || col >= m_cols) {
+        return;
+    }
+
+    auto &cells = activeCells();
+    const TerminalCell eraseCell = makeEraseCell();
+    TerminalCell &cell = cells[static_cast<std::size_t>(index(row, col))];
+    if (cell.wide) {
+        // Mutating either half of a wide glyph must clear the whole cluster so
+        // later edits cannot leave a dangling continuation cell behind.
+        cell = eraseCell;
+        if (col + 1 < m_cols) {
+            cells[static_cast<std::size_t>(index(row, col + 1))] = eraseCell;
+        }
+        return;
+    }
+    if (!cell.wideContinuation) {
+        return;
+    }
+
+    cell = eraseCell;
+    if (col > 0) {
+        TerminalCell &left = cells[static_cast<std::size_t>(index(row, col - 1))];
+        if (left.wide) {
+            left = eraseCell;
+        }
+    }
+}
+
+void TerminalEmulator::sanitizeWideRow(int row)
+{
+    if (row < 0 || row >= m_rows) {
+        return;
+    }
+
+    auto &cells = activeCells();
+    const TerminalCell eraseCell = makeEraseCell();
+    // Row shift operations can split wide pairs. Normalize the row afterward
+    // so rendering and cursor math see only valid lead/continuation pairs.
+    for (int col = 0; col < m_cols; ++col) {
+        TerminalCell &cell = cells[static_cast<std::size_t>(index(row, col))];
+        if (cell.wide) {
+            const bool hasContinuation =
+                (col + 1 < m_cols) && cells[static_cast<std::size_t>(index(row, col + 1))].wideContinuation;
+            if (!hasContinuation) {
+                cell = eraseCell;
+            }
+            continue;
+        }
+        if (!cell.wideContinuation) {
+            continue;
+        }
+        const bool hasLeadingWide = (col > 0) && cells[static_cast<std::size_t>(index(row, col - 1))].wide;
+        if (!hasLeadingWide) {
+            cell = eraseCell;
+        }
+    }
 }
 
 void TerminalEmulator::moveCursor(int row, int col)

@@ -3,7 +3,54 @@
 Date: 2026-05-15  
 Source report reviewed: `WINDOWS_BUGS_REPORT.md`
 
-## What Was Fixed
+## Latest Fixes (2026-05-15 - Renderer Crash on Clear)
+
+### Issue: Terminal Renderer Crashes on Windows with `ls` + `clear`
+
+**Symptoms:**
+- Running `ls` followed by `clear` (or `cls`) causes renderer crash
+- Cell data mismatch between emulator, scrollback, and widget
+- Viewport becomes desynchronized after clear operations
+
+**Root Causes Identified:**
+1. **Race condition** between ConPTY output batching and screen clear operations
+2. **Scrollback repopulation** after clear: `m_scrolledLines` from before the clear were being added to scrollback after `eraseInDisplay` cleared the screen
+3. **Viewport scroll optimization** causing rendering artifacts when ConPTY batches output containing clear sequences
+4. **Cursor position** not reset to home after ED2/ED3 clear (non-standard behavior)
+
+**Fixes Applied:**
+
+1. **Reset cursor to home position after clear (ED2/ED3)**
+   - File: `src/terminal/TerminalEmulator.cpp`
+   - Added `m_cursorRow = 0; m_cursorCol = 0;` after clearing screen in `eraseInDisplay`
+   - Why: Standard VT behavior expects cursor at (0,0) after full screen clear
+
+2. **Prevent scrollback repopulation after clear**
+   - File: `src/terminal/TerminalWidget.cpp` in `flushPendingSessionOutput()`
+   - Moved `takeScrolledLines()` processing AFTER scrollback clear check
+   - Discard scrolled lines if scrollback was just cleared
+   - Why: Prevents stale lines from before clear being added back to scrollback
+
+3. **Disable viewport scroll optimization for full-screen clears on Windows**
+   - File: `src/terminal/TerminalWidget.cpp` in `flushPendingSessionOutput()`
+   - Added Windows-specific check: `const bool isFullScreenClear = (dirtyRowCount >= m_emulator.rows());`
+   - Disable optimization when `isFullScreenClear` is true on Windows
+   - Why: ConPTY batches output differently than Unix PTY; scroll optimization causes artifacts during clear sequences
+
+4. **Force full viewport repaint after scrollback clear**
+   - File: `src/terminal/TerminalWidget.cpp` in `flushPendingSessionOutput()`
+   - Added early return with `viewport()->update()` after scrollback clear
+   - Ensures scrollbar and viewport are fully synchronized
+   - Why: Prevents partial repaints that can leave stale cell data visible
+
+**Testing Recommendations:**
+- Run all tests in `docs/WINDOWS_LAZYVIM_CLEAR_CHECKLIST.md`
+- Focus on sections A1-A4 (Core Clear + Cursor Tests)
+- Verify `ls` + `clear` + `ls` sequence works correctly
+- Test with PowerShell, cmd.exe, and Git Bash
+- Verify LazyVim `:term` buffer clear behavior (section B4)
+
+## Previous Fixes (Original Report)
 
 1. **LNM default is now standards-compatible (`off`) on all platforms**
 - Changed `defaultLineFeedNewLineMode()` to always return `false`.
